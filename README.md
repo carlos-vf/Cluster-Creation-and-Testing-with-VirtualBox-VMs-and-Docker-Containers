@@ -78,14 +78,16 @@ First, lets clone the template machine so we can work in the real nodes of our c
 
 
 ### Network adapters configuration
-Once it is created, lets configure the two network adapters: one for internet access (NAT) and one for internal communication between VMs.
-
+Once it is created, lets configure the two network adapters:
+1. Adapter 1 (NAT): This connects the VM to the host’s network and allows internet access.
+2. Adapter 2 (Internal network): This is used for communication between the VMs on a private internal network, where each VM is assigned a static IP address.
+   
 - Right click in the virtual machine (_master_/_node01_) and then **_Settings>Network_**. Check that the first adapter is attached to NAT.
 <p align="center">
   <img src="https://github.com/user-attachments/assets/d7b8041d-f912-4587-87c1-5e6b8789d9b3"  width="700">
 </p>
 
-- Select _Adapter 2_, click on _Enable Network Adapter_ and attach it to _Internal Network_. Then select a name for the network (e.g., _clustervimnet_).
+- Select _Adapter 2_, click on _Enable Network Adapter_ and attach it to _Internal Network_. Then select a name for the network that must be the same for all the nodes (e.g., _clustervimnet_).
 <p align="center">
   <img src="https://github.com/user-attachments/assets/6fff35b0-a7af-4db3-b422-3b38bacff0b6"  width="700">
 </p>
@@ -94,6 +96,16 @@ Once it is created, lets configure the two network adapters: one for internet ac
 
 
 
-#
+# Network Configuration for Master Node
+The master node will act as the control point for the cluster, managing DNS (domain name system) and DHCP (dynamic host configuration protocol) services.
+
+## Configure the second network adapter
+You need to configure the second network adapter (Adapter 2) to assign a static IP address. This IP address will allow the master node to communicate with the other worker nodes on the internal network.
+
+After starting and logging into the master VM, find the network interfaces available on your VM using
+```
+ip link show
+```
+
 
 
