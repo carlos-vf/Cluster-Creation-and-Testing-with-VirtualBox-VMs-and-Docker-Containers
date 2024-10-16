@@ -96,16 +96,91 @@ Once it is created, lets configure the two network adapters:
 
 
 
-# Network Configuration for Master Node
+## Network Configuration for Master Node
 The master node will act as the control point for the cluster, managing DNS (domain name system) and DHCP (dynamic host configuration protocol) services.
 
-## Configure the second network adapter
+### Configure the network file
 You need to configure the second network adapter (Adapter 2) to assign a static IP address. This IP address will allow the master node to communicate with the other worker nodes on the internal network.
 
 After starting and logging into the master VM, find the network interfaces available on your VM using
 ```
 ip link show
 ```
+
+The output will be something similar to this:
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/79386b9a-951c-4d61-99af-00e8fa3a56c0"  width="700">
+</p>
+
+where
+
+- **enp0s3** is the first adapter (NAT).
+- **enp0s8** is the second adapter (internal network).
+
+We want to configure enp0s8 to have a static IP, like 192.168.0.1. To do this, lets edit the Netplan configuration file.
+- Open the file with:
+```
+sudo vim /etc/netplan/50-cloud-init.yaml
+```
+- Add the necessary lines to make it look like this:
+```yaml
+network:
+  ethernets:
+    enp0s3:
+      dhcp4: true
+    enp0s8:
+     dhcp4: no
+     addresses: [192.168.0.1/24]
+  version: 2
+```
+
+Finally, apply the changes with
+```
+sudo netplan apply
+```
+
+
+### Configure hosts
+To make it easier to identify machines in the cluster, lets change the hostname of the master node. Open the host file with:
+```
+sudo vim /etc/hostname
+```
+and change its content to _master_.
+
+We also need to define the static IP addresses and hostnames for all nodes in the cluster in the /etc/hosts file. This will allow the master node to resolve the IP addresses of the worker nodes by name. Open the file with:
+```
+sudo vim /etc/hosts
+```
+and edit it until looks like this:
+```shell
+127.0.0.1 localhost
+192.168.0.1 master
+
+192.168.0.22 node01
+
+# The following lines are deriable for IPv6 capable hosts
+...
+```
+If you have more than one worker node, be sure to assign them an IP (192.168.0.23 node02, ...).
+
+
+
+##  Setting Up Port Forwarding for SSH
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
