@@ -65,7 +65,7 @@ sudo shutdown -h now
 The template machine should be ready now for cloning.
 
 
-## Mater/Nodes creation & Network adapters configuration
+## Master/Nodes creation & Network adapters configuration
 ### Machine clonation
 First, lets clone the template machine so we can work in the real nodes of our cluster.
 - Right click on _template_ machine in VirtualBox and then select _Clone_.
@@ -147,7 +147,7 @@ sudo vim /etc/hostname
 ```
 and change its content to _master_.
 
-We also need to define the static IP addresses and hostnames for all nodes in the cluster in the /etc/hosts file. This will allow the master node to resolve the IP addresses of the worker nodes by name. Open the file with:
+We also need to define the static IP addresses and hostnames for all nodes in the cluster in the `/etc/hosts file`. This will allow the master node to resolve the IP addresses of the worker nodes by name. Open the file with:
 ```
 sudo vim /etc/hosts
 ```
@@ -167,11 +167,67 @@ If you have more than one worker node, be sure to assign them an IP (192.168.0.2
 
 ##  Setting Up Port Forwarding for SSH
 
+### Port forwarding rule
+To connect to the VMs (e.g., the master node) from your host machine, VirtualBox requires port forwarding rules to map ports from the guest VMs to your host machine. In this case, you’ll set up a rule to forward SSH traffic from port 2222 on the host to port 22 on the master node.
+
+- Open VirtualBox and right click on the _master_ machine, then **_Settings>Network>Port Forwarding>Add_**.
+- Fill the gaps following the table.
+
+| Namer  | Protocol | Host IP | Host Port | Guest IP | Gest Port |
+| ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |.pub
+| ssh  | TCP  | 127.0.0.1 | 2222 | | 22 |
+
+- Apply the changes and restart the VM.
 
 
+### SSH service
+In order to make SSH work, we need first to install its package.
+```
+sudo apt install openssh-server
+```
+
+Lets check it is enabled now by running the command:
+```
+sudo systemctl status ssh
+```
+
+To ensure it starts on boot:
+```
+sudo systemctl enable ssh
+```
 
 
+### Passwordless SSH
+To avoid entering a password each time you connect via SSH, you can configure SSH key-based authentication.
 
+First, on your host machine, generate an SSH key pair (if you don’t have one). I will be working in Windows PowerShell.
+```
+ssh-keygen
+```
+
+Now, copy the generated public key (mine is _id_ed25519.pub_ but yours can be different) from your host to the master node (your VM must be running).
+```
+cd .ssh
+scp -P 2222 id_ed25519.pub admin@127.0.0.1:~
+```
+
+If your host machine shows a HUGE warning telling you that you can be suffering a man-in-the-middle attack, don't worry, you are that man. When you connect to an SSH server for the first time, the server’s host key is stored in the known_hosts file on your client machine. If the host key of the server changes (which can happen, for example, if you rebuild the VM), SSH assumes this could be a security issue. You need to remove the outdated or incorrect host key from your known_hosts file and run the _scp_ command again.
+```
+ssh-keygen -R [127.0.0.1]:2222
+```
+
+At this point, you should have been able to connect you VM by SSH. Now that the public key has been copied into your home directory, lets add it to the `authorized_keys` file.
+```
+cat id_ed25519.pub >> .ssh/authorized_keys
+rm id_ed25519.pub
+```
+
+To verify everything works fine, just open a new terminal in your host machine and lunch an SSH connection
+```
+ssh -p 2222 admin@127.0.0.1
+```
+
+If everything is set up correctly, you will be logged in without needing to enter a password.
 
 
 
