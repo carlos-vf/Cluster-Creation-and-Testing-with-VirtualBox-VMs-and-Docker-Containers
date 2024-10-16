@@ -174,7 +174,7 @@ To connect to the VMs (e.g., the master node) from your host machine, VirtualBox
 - Fill the gaps following the table.
 
 | Namer  | Protocol | Host IP | Host Port | Guest IP | Gest Port |
-| ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |.pub
+| ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |
 | ssh  | TCP  | 127.0.0.1 | 2222 | | 22 |
 
 - Apply the changes and restart the VM.
