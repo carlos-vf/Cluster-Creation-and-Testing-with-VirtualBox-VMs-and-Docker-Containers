@@ -1,4 +1,4 @@
-# Cluster-in-VirtualVox
+# Cluster-in-VirtualBox
 
 ## Goals
 In this tutorial, we are going to create a set of four Linux virtual machines.
@@ -66,7 +66,34 @@ The template machine should be ready now for cloning.
 
 
 ## Mater/Nodes creation & Network adapters configuration
+### Machine clonation
+First, lets clone the template machine so we can work in the real nodes of our cluster.
+- Right click on _template_ machine in VirtualBox and then select _Clone_.
+- Set a name for you clone.
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/19d28453-aaf8-45d6-95bb-b722caa1bb33"  width="700">
+</p>
+
+- Repeat any number of times to create the worker nodes (for now, I will only create one worker named _node01_).
+
+
+### Network adapters configuration
 Once it is created, lets configure the two network adapters: one for internet access (NAT) and one for internal communication between VMs.
 
+- Right click in the virtual machine (_master_/_node01_) and then **_Settings>Network_**. Check that the first adapter is attached to NAT.
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/d7b8041d-f912-4587-87c1-5e6b8789d9b3"  width="700">
+</p>
+
+- Select _Adapter 2_, click on _Enable Network Adapter_ and attach it to _Internal Network_. Then select a name for the network (e.g., _clustervimnet_).
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/6fff35b0-a7af-4db3-b422-3b38bacff0b6"  width="700">
+</p>
+
+- Save the settings and repeat the configuration for the other nodes.
+
+
+
+#
 
 
