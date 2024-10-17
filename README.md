@@ -147,12 +147,12 @@ sudo vim /etc/hostname
 ```
 and change its content to _master_.
 
-We also need to define the static IP addresses and hostnames for all nodes in the cluster in the `/etc/hosts file`. This will allow the master node to resolve the IP addresses of the worker nodes by name. Open the file with:
+We also need to define the static IP addresses and hostnames for all nodes in the cluster in the `/etc/hosts` file. This will allow the master node to resolve the IP addresses of the worker nodes by name. Open the file with:
 ```
 sudo vim /etc/hosts
 ```
 and edit it until looks like this:
-```shell
+```yaml
 127.0.0.1 localhost
 192.168.0.1 master
 
@@ -233,10 +233,111 @@ If everything is set up correctly, you will be logged in without needing to ente
 
 
 
+## DHCP and DNS
+The goal of this section is to set up the master node to dynamically assign IP addresses and manage DNS resolution for the worker nodes.
 
+First, install `dnsmasq`, which is a lightweight DHCP and DNS server. It will serve the internal network, assigning dynamic IPs to the nodes and resolving hostnames.
+```
+sudo apt install dnsmasq -y
+```
 
+Then, we need to configure the `/etc/dnsmasq.conf` file. The configuration given in the tutorial is minimal, but it’s sufficient for basic DHCP and DNS operations.
+```
+sudo vim /etc/dnsmasq.conf
+```
 
+Here are the key settings:
 
+- **port=53**: This configures dnsmasq to listen on port 53, the standard port for DNS.
+- **interface=enp0s8**: This defines the network interface on which `dnsmasq` listens. Ensure that the internal network interface (in my case, enp0s8) is specified.
+- **listen-address**: Specifies the IP addresses `dnsmasq` will listen on. These include loopback (127.0.0.1) and the IP of the master node on the internal network (192.168.0.1).
+- **dhcp-range**: This defines the IP range that dnsmasq will assign to the worker nodes, with a lease time of 12 hours.
+- **dhcp-option=option:dns-server,192.168.0.1**: Specifies the DNS server for the DHCP clients, which is the master node itself.
 
+```yaml
+port=53
+bogus-priv
+strict-order
+interface=enp0s8
+listen-address=::1,127.0.0.1,192.168.0.1
+bind-interfaces
+log-queries
+log-dhcp
+dhcp-range=192.168.0.22,192.168.0.28,255.255.255.0,12h
+dhcp-option=option:dns-server,192.168.0.1
+dhcp-option=3
+```
+
+To ensure proper DNS resolution, create a symbolic link to the system `resolv.conf` file, which uses `systemd-resolved`.
+```
+sudo ln -fs /run/systemd/resolve/resolv.conf /etc/resolv.conf
+```
+
+We now need to ensure that the master node has the correct network configuration for both interfaces. Edit the network file to make it similar to this:
+```
+sudo vim /etc/netplan/50-cloud-init.yaml
+```
+
+```yaml
+network:
+  ethernets:
+    enp0s3:
+      dhcp4: true
+    enp0s8:
+      dhcp4: false
+      addresses: [192.168.0.1/24]
+      nameservers:
+        addresses: [192.168.0.1]
+  version: 2
+```
+```
+sudo netplan apply
+```
+
+If we want to control how `dnsmasq` interacts with `resolvconf`, we need to uncommend a couple of lines in the `/etc/default/dnsmasq` file. Lets open the file:
+```
+sudo vim /etc/default/dnsmasq
+```
+
+And uncomment the following lines:
+```yaml
+IGNORE_RESOLVCONF=yes
+DNSMASQ_EXCEPT="lo"
+```
+
+Apply the changes by restarting the services.
+```
+sudo systemctl restart dnsmasq systemd-resolved
+```
+
+After restarting, check that dnsmasq is running without issues. The service should be enabled and active.
+```
+sudo systemctl status dnsmasq
+```
+
+To check if the DNS server is resolving names correctly, use the `host` command:
+```
+host node01
+```
+
+The ouptut should be similar to this:
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/84466e1f-10fd-49c3-b21c-4efa6d63f7b4"  width="400">
+</p>
+
+If your machine does not find the node:
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/bbd58bcb-c25c-45e6-a9e6-38c2026e7500"  width="400">
+</p>
+
+you should try to either restart the `dnsmasq` service or reboot your VM.
+```
+sudo systemctl restart dnsmasq
+```
+
+NOTE: Afther bootstrap may happen the `dnsmasq` service start before the interfaces, just restart the service.
+```
+sudo systemctl restart dnsmasq systemd-resolved
+```
 
 
