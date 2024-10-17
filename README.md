@@ -379,15 +379,6 @@ sudo iptables -t nat -A POSTROUTING -o enp0s3 -j MASQUERADE
 sudo netfilter-persistent save
 ```
 
-In order to check everything is correct, lets **reboot** the machine and run a couple of commands:
-- In `/proc/sys/net/ipv4/ip_forward` there should be a "1".
-```
-cat /proc/sys/net/ipv4/ip_forward
-```
-- In the `iptables` you should see a rule for `MASQUERADE` under the `POSTROUTING` chain.
-```
-sudo iptables -L -v -n
-```
 
 
 ## Distributed File System
@@ -456,7 +447,6 @@ network:
 For the first adapter (enp0s3):
 - **dhcp4: true**: This allows the node to obtain an IP address dynamically via DHCP.
 - **dhcp4-overrides.use-dns**: no: This ensures that the DNS from this interface is not used, as you want to use the master node's DNS for internal cluster communication.
-
 For the second adapter (enp0s8):
 - **dhcp4: true**: The interface will use DHCP to get an IP address. This IP will be in the range defined by the master node's DHCP server (set up using `dnsmasq`).
 -** dhcp-identifier: mac**: This ensures that the DHCP server assigns an IP address based on the MAC address, allowing for stable IP assignments.
@@ -485,6 +475,20 @@ You should see two IP addresses:
 - One from the NAT network (e.g., 10.0.2.15).
 - One from the internal network (in my case in the range [192.168.0.22. 192.168.0.28]).
 
+
+By this point you should be able to correctly connect your master node from the worker node. You can try it by
+```
+ping 192.168.0.1
+```
+Moreover, you should also be able to connect to the internet ONLY using the second network adapter (enp0s8). You can manually deactivate the NAT adapter (enp0s3) from VirtualBox (the machine must be off) and try to connect _google.com_:
+```
+ping google.com
+```
+
+If it works, that means that:
+- You are getting an IP dinamically (so the DHCP server is working properly).
+- The domain is being resolved (so the DNS server is working properly).
+- Your master node is able to return the packages from the destination to you (NAT and Port Forwarding are working properly).
 
 
 ### File System configuration (mounting point)
