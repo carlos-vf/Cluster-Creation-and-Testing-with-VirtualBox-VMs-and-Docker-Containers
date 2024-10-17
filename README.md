@@ -394,11 +394,11 @@ sudo vim /etc/netplan/50-cloud-init.yaml
 ```yaml
 network:
   ethernets:
-    enp0s8:
+    enp0s3:
       dhcp4: true
       dhcp4-overrides:
         use-dns: no
-    enp0s9:
+    enp0s8:
       dhcp4: true
       dhcp-identifier: mac
       nameservers:
