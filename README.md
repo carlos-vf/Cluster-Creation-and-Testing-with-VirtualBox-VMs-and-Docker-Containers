@@ -345,6 +345,51 @@ sudo systemctl restart dnsmasq systemd-resolved
 
 
 
+## Port Forwarding and NAT in the Internal Network
+In order to connect to the internet from the worker nodes using the master node as a gateway, we need to configure port forwarding in our master node.
+
+Lets create a new file and write the following line:
+```
+sudo vim /etc/sysctl.d/99-ipforward.conf
+```
+```yaml
+net.ipv4.ip_forward=1
+```
+
+Apply changes inmmediately
+```
+sudo sysctl --system
+```
+
+Verify that IP forwarding is enabled by running the following command. If the ouput is "1", everything is fine by now.
+```
+cat /proc/sys/net/ipv4/ip_forward
+```
+
+We need now to ensure that the IP tables are configured to allow NAT (Network Address Translation) between network interfaces.
+
+`iptables-persistent` is a package that automatically saves your current iptables rules and loads them when the system boots. Lets install it (press _yes_ all the times it is needed):
+```
+sudo apt install iptables-persistent
+```
+
+Now it's time to set up a NAT rule for the outgoing interface (enp0s3) and save it:
+```
+sudo iptables -t nat -A POSTROUTING -o enp0s3 -j MASQUERADE
+sudo netfilter-persistent save
+```
+
+In order to check everything is correct, lets **reboot** the machine and run a couple of commands:
+- In `/proc/sys/net/ipv4/ip_forward` there should be a "1".
+```
+cat /proc/sys/net/ipv4/ip_forward
+```
+- In the `iptables` you should see a rule for `MASQUERADE` under the `POSTROUTING` chain.
+```
+sudo iptables -L -v -n
+```
+
+
 ## Distributed File System
 To build a cluster, you need a shared filesystem that all nodes can access.
 
@@ -403,6 +448,9 @@ network:
       dhcp-identifier: mac
       nameservers:
         addresses: [192.168.0.1]
+      routes:
+        - to: 0.0.0.0/0
+          via: 192.168.0.1
 ```
 
 For the first adapter (enp0s3):
@@ -436,6 +484,7 @@ hostname -I
 You should see two IP addresses:
 - One from the NAT network (e.g., 10.0.2.15).
 - One from the internal network (in my case in the range [192.168.0.22. 192.168.0.28]).
+
 
 
 ### File System configuration (mounting point)
