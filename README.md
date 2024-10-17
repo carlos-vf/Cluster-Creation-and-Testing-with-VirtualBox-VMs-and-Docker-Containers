@@ -266,6 +266,9 @@ log-dhcp
 dhcp-range=192.168.0.22,192.168.0.28,255.255.255.0,12h
 dhcp-option=option:dns-server,192.168.0.1
 dhcp-option=3
+
+# Read entries from /etc/hosts and serve them as part of the DNS
+addn-hosts=/etc/hosts
 ```
 
 To ensure proper DNS resolution, create a symbolic link to the system `resolv.conf` file, which uses `systemd-resolved`.
@@ -340,4 +343,152 @@ NOTE: Afther bootstrap may happen the `dnsmasq` service start before the interfa
 sudo systemctl restart dnsmasq systemd-resolved
 ```
 
+
+
+## Distributed File System
+To build a cluster, you need a shared filesystem that all nodes can access.
+
+Lets begin installing the NFS kernel server package.
+```
+sudo apt install nfs-kernel-server
+```
+
+Then create a shared directory that all nodes will access.
+```
+sudo mkdir /shared
+sudo chmod 777 /shared
+```
+
+Open the NFS exports file and specify the directory and network permissions.
+- **rw**: Grants read and write permissions.
+- **sync**: Ensures changes are written to disk immediately.
+- **no_root_squash**: Allows root users on clients to access files as root.
+- **no_subtree_check**: Disables subtree checking for better performance.
+```
+sudo vim /etc/exports
+```
+```yaml
+/shared/ 192.168.0.0/255.255.255.0(rw,sync,no_root_squash,no_subtree_check)
+```
+This allows all machines on the internal network (192.168.0.0/24) to access the shared directory with read/write permissions.
+
+Enable and start the NFS server.
+```
+sudo systemctl enable nfs-kernel-server
+sudo systemctl restart nfs-kernel-server
+```
+
+We can now create a test file in the new folder
+```
+touch /shared/ciao_mondo.txt
+```
+
+
+## Worker Nodes Configuration
+
+### Network configuration
+First we need to modify the network file.
+```
+sudo vim /etc/netplan/50-cloud-init.yaml
+```
+```yaml
+network:
+  ethernets:
+    enp0s8:
+      dhcp4: true
+      dhcp4-overrides:
+        use-dns: no
+    enp0s9:
+      dhcp4: true
+      dhcp-identifier: mac
+      nameservers:
+        addresses: [192.168.0.1]
+```
+
+For the first adapter (enp0s3):
+- **dhcp4: true**: This allows the node to obtain an IP address dynamically via DHCP.
+- **dhcp4-overrides.use-dns**: no: This ensures that the DNS from this interface is not used, as you want to use the master node's DNS for internal cluster communication.
+
+For the second adapter (enp0s8):
+- **dhcp4: true**: The interface will use DHCP to get an IP address. This IP will be in the range defined by the master node's DHCP server (set up using `dnsmasq`).
+-** dhcp-identifier: mac**: This ensures that the DHCP server assigns an IP address based on the MAC address, allowing for stable IP assignments.
+- **nameservers.addresses: [192.168.0.1]**: The DNS server for the internal network will be the master node at 192.168.0.1. This ensures that the DNS queries for the cluster are handled by the master node.
+
+Apply the configuration:
+```
+sudo netplan apply
+```
+
+Ensure the /etc/hostname file is cleared (you must empty it).
+```
+sudo vim /etc/hostname
+```
+
+Finally, set the DNS server.
+```
+sudo ln -fs /run/systemd/resolve/resolv.conf /etc/resolv.conf
+```
+
+Now it is time to reboot our VM. In order to verify that the nodes gets an IP from the DHCP, lets run the command:
+```
+hostname -I
+```
+You should see two IP addresses:
+- One from the NAT network (e.g., 10.0.2.15).
+- One from the internal network (in my case in the range [192.168.0.22. 192.168.0.28]).
+
+
+### File System configuration (mounting point)
+Lets install the NFS client on each worker node.
+```
+sudo apt install nfs-common
+```
+
+Create a mount point (where the shared folder from the master will be mounted).
+```
+sudo mkdir /shared
+```
+
+Mount the shared directory from the master node to this folder.
+```
+sudo mount 192.168.0.1:/shared /shared
+```
+
+To check if everything went fine, just show the content of the folder. The file `ciao_mondo.txt` should appear.
+```
+ls /shared
+```
+
+NOTE: This type of mounting only works while the machine is running. After rebooting the mount point will disappear.
+
+
+
+### File System configuration (automatic mount)
+Install AutoFS to automatically mount the shared directory on boot, install the AutoFS package.
+```
+sudo apt -y install autofs
+```
+
+Edit the `auto.master` configuration file to include the mount points adding the following line:
+```
+sudo vim /etc/auto.master
+```
+```
+/-    /etc/auto.mount
+```
+
+Create the AutoFS configuration file (`auto.mount`) to define the NFS mount. Add the following configuration:
+```
+sudo vim /etc/auto.mount
+```
+```yaml
+/shared   -fstype=nfs,rw  192.168.0.1:/shared
+```
+
+Finally, restart AutoFS service to apply changes.
+```
+sudo systemctl restart autofs
+```
+
+Now the `shared` folder shoud remain mounted even after rebooting your node.
 
