@@ -527,7 +527,7 @@ Edit the `auto.master` configuration file to include the mount points adding the
 sudo vim /etc/auto.master
 ```
 ```
-/-    /etc/auto.mount
+/- /etc/auto.mount
 ```
 
 Create the AutoFS configuration file (`auto.mount`) to define the NFS mount. Add the following configuration:
@@ -535,7 +535,7 @@ Create the AutoFS configuration file (`auto.mount`) to define the NFS mount. Add
 sudo vim /etc/auto.mount
 ```
 ```yaml
-/shared   -fstype=nfs,rw  192.168.0.1:/shared
+/shared -fstype=nfs,rw  192.168.0.1:/shared
 ```
 
 Finally, restart AutoFS service to apply changes.
