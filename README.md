@@ -4,10 +4,10 @@
 In this tutorial, we are going to create a set of four Linux virtual machines.
 
 - Each machine is capable of connecting to the internet and able to connect with each other privately as well as can be reached from the host machine.
-- Our machines will be named master, node01, node02,..., node0X.
-- The first machine will act as a master node and will have 1vCPUs, 2GB of RAM and 25 GB hard disk.
-- The other machines will act as workers and they will have 1vCPUs, 1GB of RAM and 10 GB hard disk.
-- We will assign our machines static IP address in the internal network: 192.168.0.1, 192.168.0.22, 192.168.0.23, .... 192.168.0.XX.
+- Our machines will be named master (or node01), node02, node03,..., node0X.
+- The first machine will act as a master node and will have 2vCPUs, 2GB of RAM and 10 GB hard disk.
+- The other machines will act as workers and they will have 2vCPUs, 2GB of RAM and 10 GB hard disk.
+- We will assign our machines static IP address in the internal network: 192.168.0.1, 192.168.0.2, 192.168.0.3, ..., 192.168.0.XX.
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/9bddf35b-147c-49d5-9778-f1a68295bcca" width="500">
@@ -33,11 +33,11 @@ In this tutorial, we are going to create a set of four Linux virtual machines.
   <img src="https://github.com/user-attachments/assets/4578060f-7f05-44e9-b80a-3d4831a121e3" width="700">
 </p>
 
-- Configure hardware (lets select 1000 MB of RAM memory and 1 CPU).
+- Configure hardware (lets select 2048 MB of RAM memory and 2 CPU).
 <p align="center">
   <img src="https://github.com/user-attachments/assets/d87a6cf4-a861-45d0-8dbb-b4b1e357c675"  width="700">
 
-- Configure hard disk (select 25 GB if it is not already the default option in your machine).
+- Configure hard disk (select 10 GB if it is not already the default option in your machine).
 <p align="center">
   <img src="https://github.com/user-attachments/assets/6345406a-ef18-4c57-acda-7dcba1c6d5b5"  width="700">
 </p>
@@ -93,75 +93,6 @@ Once it is created, lets configure the two network adapters:
 </p>
 
 - Save the settings and repeat the configuration for the other nodes.
-
-
-
-## Network Configuration for Master Node
-The master node will act as the control point for the cluster, managing DNS (domain name system) and DHCP (dynamic host configuration protocol) services.
-
-### Configure the network file
-You need to configure the second network adapter (Adapter 2) to assign a static IP address. This IP address will allow the master node to communicate with the other worker nodes on the internal network.
-
-After starting and logging into the master VM, find the network interfaces available on your VM using
-```
-ip link show
-```
-
-The output will be something similar to this:
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/79386b9a-951c-4d61-99af-00e8fa3a56c0"  width="700">
-</p>
-
-where
-
-- **enp0s3** is the first adapter (NAT).
-- **enp0s8** is the second adapter (internal network).
-
-We want to configure enp0s8 to have a static IP, like 192.168.0.1. To do this, lets edit the Netplan configuration file.
-- Open the file with:
-```
-sudo vim /etc/netplan/50-cloud-init.yaml
-```
-- Add the necessary lines to make it look like this:
-```yaml
-network:
-  ethernets:
-    enp0s3:
-      dhcp4: true
-    enp0s8:
-     dhcp4: no
-     addresses: [192.168.0.1/24]
-  version: 2
-```
-
-Finally, apply the changes with
-```
-sudo netplan apply
-```
-
-
-### Configure hosts
-To make it easier to identify machines in the cluster, lets change the hostname of the master node. Open the host file with:
-```
-sudo vim /etc/hostname
-```
-and change its content to _master_.
-
-We also need to define the static IP addresses and hostnames for all nodes in the cluster in the `/etc/hosts` file. This will allow the master node to resolve the IP addresses of the worker nodes by name. Open the file with:
-```
-sudo vim /etc/hosts
-```
-and edit it until looks like this:
-```yaml
-127.0.0.1 localhost
-192.168.0.1 master
-
-192.168.0.22 node01
-
-# The following lines are deriable for IPv6 capable hosts
-...
-```
-If you have more than one worker node, be sure to assign them an IP (192.168.0.23 node02, ...).
 
 
 
@@ -231,6 +162,70 @@ If everything is set up correctly, you will be logged in without needing to ente
 
 
 
+## Network Configuration for Master Node
+The master node will act as the control point for the cluster, managing DNS (domain name system) and DHCP (dynamic host configuration protocol) services.
+
+### Configure the network file
+You need to configure the second network adapter (Adapter 2) to assign a static IP address. This IP address will allow the master node to communicate with the other worker nodes on the internal network.
+
+After starting and logging into the master VM, find the network interfaces available on your VM using
+```
+ip link show
+```
+
+The output will be something similar to this:
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/79386b9a-951c-4d61-99af-00e8fa3a56c0"  width="700">
+</p>
+
+where
+
+- **enp0s3** is the first adapter (NAT).
+- **enp0s8** is the second adapter (internal network).
+
+We want to configure enp0s8 to have a static IP, like 192.168.0.1. To do this, lets edit the Netplan configuration file.
+- Open the file with:
+```
+sudo vim /etc/netplan/50-cloud-init.yaml
+```
+- Add the necessary lines to make it look like this:
+```yaml
+network:
+  version: 2
+  ethernets:
+    enp0s3:
+      dhcp4: true
+    enp0s8:
+     dhcp4: false
+     addresses: [192.168.0.1/28]
+```
+
+Finally, apply the changes with
+```
+sudo netplan apply
+```
+
+
+### Configure hosts
+To make it easier to identify machines in the cluster, lets change the hostname of the master node. Open the host file with:
+```
+sudo vim /etc/hostname
+```
+and change its content to _master_.
+
+We also need to define the static IP address and hostname for the master node in `/etc/hosts` file. Open the file with:
+```
+sudo vim /etc/hosts
+```
+and edit it until looks like this:
+```yaml
+127.0.0.1 localhost
+192.168.0.1 master
+
+# The following lines are deriable for IPv6 capable hosts
+...
+```
+
 
 
 ## DHCP and DNS
@@ -263,12 +258,9 @@ listen-address=::1,127.0.0.1,192.168.0.1
 bind-interfaces
 log-queries
 log-dhcp
-dhcp-range=192.168.0.22,192.168.0.28,255.255.255.0,12h
+dhcp-range=192.168.0.2,192.168.0.14,255.255.255.240,12h
 dhcp-option=option:dns-server,192.168.0.1
 dhcp-option=3
-
-# Read entries from /etc/hosts and serve them as part of the DNS
-addn-hosts=/etc/hosts
 ```
 
 To ensure proper DNS resolution, create a symbolic link to the system `resolv.conf` file, which uses `systemd-resolved`.
@@ -288,7 +280,7 @@ network:
       dhcp4: true
     enp0s8:
       dhcp4: false
-      addresses: [192.168.0.1/24]
+      addresses: [192.168.0.1/28]
       nameservers:
         addresses: [192.168.0.1]
   version: 2
@@ -316,31 +308,6 @@ sudo systemctl restart dnsmasq systemd-resolved
 After restarting, check that dnsmasq is running without issues. The service should be enabled and active.
 ```
 sudo systemctl status dnsmasq
-```
-
-To check if the DNS server is resolving names correctly, use the `host` command:
-```
-host node01
-```
-
-The ouptut should be similar to this:
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/84466e1f-10fd-49c3-b21c-4efa6d63f7b4"  width="400">
-</p>
-
-If your machine does not find the node:
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/bbd58bcb-c25c-45e6-a9e6-38c2026e7500"  width="400">
-</p>
-
-you should try to either restart the `dnsmasq` service or reboot your VM.
-```
-sudo systemctl restart dnsmasq
-```
-
-NOTE: Afther bootstrap may happen the `dnsmasq` service start before the interfaces, just restart the service.
-```
-sudo systemctl restart dnsmasq systemd-resolved
 ```
 
 
@@ -404,9 +371,9 @@ Open the NFS exports file and specify the directory and network permissions.
 sudo vim /etc/exports
 ```
 ```yaml
-/shared/ 192.168.0.0/255.255.255.0(rw,sync,no_root_squash,no_subtree_check)
+/shared/ 192.168.0.0/255.255.255.240(rw,sync,no_root_squash,no_subtree_check)
 ```
-This allows all machines on the internal network (192.168.0.0/24) to access the shared directory with read/write permissions.
+This allows all machines on the internal network (192.168.0.0/28) to access the shared directory with read/write permissions.
 
 Enable and start the NFS server.
 ```
@@ -422,6 +389,13 @@ touch /shared/ciao_mondo.txt
 
 ## Worker Nodes Configuration
 
+### Configure hosts
+Let's change the hostnames of the worker nodes. Open the host file with:
+```
+sudo vim /etc/hostname
+```
+and change its content to node02.
+
 ### Network configuration
 First we need to modify the network file.
 ```
@@ -430,10 +404,6 @@ sudo vim /etc/netplan/50-cloud-init.yaml
 ```yaml
 network:
   ethernets:
-    enp0s3:
-      dhcp4: true
-      dhcp4-overrides:
-        use-dns: no
     enp0s8:
       dhcp4: true
       dhcp-identifier: mac
@@ -444,12 +414,12 @@ network:
           via: 192.168.0.1
 ```
 
-For the first adapter (enp0s3):
-- **dhcp4: true**: This allows the node to obtain an IP address dynamically via DHCP.
-- **dhcp4-overrides.use-dns**: no: This ensures that the DNS from this interface is not used, as you want to use the master node's DNS for internal cluster communication.
-For the second adapter (enp0s8):
+For the adapter enp0s8:
+
 - **dhcp4: true**: The interface will use DHCP to get an IP address. This IP will be in the range defined by the master node's DHCP server (set up using `dnsmasq`).
--** dhcp-identifier: mac**: This ensures that the DHCP server assigns an IP address based on the MAC address, allowing for stable IP assignments.
+
+-**dhcp-identifier: mac**: This ensures that the DHCP server assigns an IP address based on the MAC address, allowing for stable IP assignments.
+
 - **nameservers.addresses: [192.168.0.1]**: The DNS server for the internal network will be the master node at 192.168.0.1. This ensures that the DNS queries for the cluster are handled by the master node.
 
 Apply the configuration:
@@ -457,38 +427,31 @@ Apply the configuration:
 sudo netplan apply
 ```
 
-Ensure the /etc/hostname file is cleared (you must empty it).
-```
-sudo vim /etc/hostname
-```
-
 Finally, set the DNS server.
 ```
 sudo ln -fs /run/systemd/resolve/resolv.conf /etc/resolv.conf
 ```
 
+### Testing DHCP, DNS & NAT
 Now it is time to reboot our VM. In order to verify that the nodes gets an IP from the DHCP, lets run the command:
 ```
-hostname -I
+ip address
 ```
-You should see two IP addresses:
-- One from the NAT network (e.g., 10.0.2.15).
-- One from the internal network (in my case in the range [192.168.0.22. 192.168.0.28]).
 
+There you should be able to see the IP address assigned to the interface enp0s8. We are sure now that the DHCP server is working properly.
 
-By this point you should be able to correctly connect your master node from the worker node. You can try it by
+In order to test the DNS server, you can run from your worker node the command
 ```
-ping 192.168.0.1
+host master
 ```
-Moreover, you should also be able to connect to the internet ONLY using the second network adapter (enp0s8). You can manually deactivate the NAT adapter (enp0s3) from VirtualBox (the machine must be off) and try to connect _google.com_:
+If it resolves the name and returns the IP of the node, then the DNS is working as it should, too.
+
+Moreover, you should also be able to connect to the internet from your workers. You can manually deactivate the NAT adapter (enp0s3) from VirtualBox (the machine must be off) and try to connect _google.com_:
 ```
 ping google.com
 ```
+If it works, that means that your master node is able to return the packages from the destination to you (NAT and Port Forwarding are working properly).
 
-If it works, that means that:
-- You are getting an IP dinamically (so the DHCP server is working properly).
-- The domain is being resolved (so the DNS server is working properly).
-- Your master node is able to return the packages from the destination to you (NAT and Port Forwarding are working properly).
 
 
 ### File System configuration (mounting point)
@@ -513,7 +476,6 @@ ls /shared
 ```
 
 NOTE: This type of mounting only works while the machine is running. After rebooting the mount point will disappear.
-
 
 
 ### File System configuration (automatic mount)
@@ -542,6 +504,25 @@ Finally, restart AutoFS service to apply changes.
 ```
 sudo systemctl restart autofs
 ```
-
 Now the `shared` folder shoud remain mounted even after rebooting your node.
+
+
+
+### More workers
+
+In order to create more worker nodes, we only need to clone our already configured node.
+After bootstrapping we should change the hostname to the new node name by running:
+```
+sudo vim /etc/hostname
+```
+
+Once the machine is rebooted, it will be able to get an IP from the DHCP, connect to the internet or other nodes using the DNS and access the shared file system.
+
+
+
+
+
+
+
+
 
