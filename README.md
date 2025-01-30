@@ -54,7 +54,7 @@ sudo apt upgrade
 
 Then, install some aditional packages running
 ```
-sudo apt install net-tools gcc make
+sudo apt install net-tools gcc make openssh-server
 ```
 
 After setting up the template VM, shut it down:
@@ -80,14 +80,14 @@ First, lets clone the template machine so we can work in the real nodes of our c
 ### Network adapters configuration
 Once it is created, lets configure the two network adapters:
 1. Adapter 1 (NAT): This connects the VM to the host’s network and allows internet access.
-2. Adapter 2 (Internal network): This is used for communication between the VMs on a private internal network, where each VM is assigned a static IP address.
+2. Adapter 2 (Internal network): This is used for communication between the VMs on a private internal network, where each VM is assigned a dynamic IP address.
    
 - Right click in the virtual machine (_master_/_node01_) and then **_Settings>Network_**. Check that the first adapter is attached to NAT.
 <p align="center">
   <img src="https://github.com/user-attachments/assets/d7b8041d-f912-4587-87c1-5e6b8789d9b3"  width="700">
 </p>
 
-- Select _Adapter 2_, click on _Enable Network Adapter_ and attach it to _Internal Network_. Then select a name for the network that must be the same for all the nodes (e.g., _clustervimnet_).
+- Select _Adapter 2_, click on _Enable Network Adapter_ and attach it to _Internal Network_. Then select a name for the network that must be the same for all the nodes (e.g., _clusternet_).
 <p align="center">
   <img src="https://github.com/user-attachments/assets/6fff35b0-a7af-4db3-b422-3b38bacff0b6"  width="700">
 </p>
@@ -112,11 +112,6 @@ To connect to the VMs (e.g., the master node) from your host machine, VirtualBox
 
 
 ### SSH service
-In order to make SSH work, we need first to install its package.
-```
-sudo apt install openssh-server
-```
-
 Lets check it is enabled now by running the command:
 ```
 sudo systemctl status ssh
@@ -390,6 +385,23 @@ touch /shared/ciao_mondo.txt
 ## Worker Nodes Configuration
 
 ### Configure hosts
+
+Firstly, we will configure the ssh. Activate the service in the *worker* node by running:
+```
+sudo systemctl start ssh
+```
+
+It is important to note that we won'tn be able to connect from our host machine, but from the *master* node. Now we can generate a key from the *master* and copy it in the *worker*. change *admin* for your node's user and the *192.168.0.2* for its IP.
+```
+ssh-keygen -t rsa -b 4096
+ssh-copy-id admin@192.168.0.2
+```
+
+Now we should be able to connect
+```
+ssh admin@192.168.0.2
+```
+
 Let's change the hostnames of the worker nodes. Open the host file with:
 ```
 sudo vim /etc/hostname
@@ -446,7 +458,7 @@ host master
 ```
 If it resolves the name and returns the IP of the node, then the DNS is working as it should, too.
 
-Moreover, you should also be able to connect to the internet from your workers. You can manually deactivate the NAT adapter (enp0s3) from VirtualBox (the machine must be off) and try to connect _google.com_:
+Moreover, you should also be able to connect to the internet from your workers. You can try to connect _google.com_:
 ```
 ping google.com
 ```
