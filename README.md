@@ -1,51 +1,74 @@
-# Cluster-in-VirtualBox
+# Cluster Creation and Testing in VirtualBox
 
+## Table of Contents
+- [Goals](#goals)
+- [Prerequisite Setup](#prerequisite-setup)
+- [Template VM Creation](#template-vm-creation)
+  - [Machine Creation](#machine-creation)
+  - [Package Installation](#package-installation)
+- [Nodes Creation & Network Adapters Configuration](#nodes-creation-&-network-adapters-configuration)
+  - [Machine Clonation](#machine-clonation)
+  - [Network Adapters Configuration](#network-adapters-configuration)
+- [Master Node Configuration](#master-node-configuration)
+  - [SSH Configuration](#ssh-configuration)
+    - [Port Forwarding Rule](#port-forwarding-rule)
+    - [SSH Service](#ssh-service)
+    - [Passwordless SSH](#passwordless-ssh)
+  - [Network Configuration](#network-configuration)
+  - [Hostnames Configuration](#hostnames-configuration)
+  - [DHCP & DNS](#dhcp-&-dns)
+  - [Port Forwarding and NAT in the Internal Network](#port-forwarding-and-nat-in-the-internal-network)
+  - [Distributed File System](#distributed-file-system)
+  - [Goals](#goals)
+  - [Goals](#goals)
+  - [Goals](#goals)
+
+ 
 ## Goals
-In this tutorial, we are going to create a set of four Linux virtual machines.
+The goal is to create a cluster of virtual machines connected by a virtual switch and testing their performance.
 
-- Each machine is capable of connecting to the internet and able to connect with each other privately as well as can be reached from the host machine.
-- Our machines will be named master (or node01), node02, node03,..., node0X.
-- The first machine will act as a master node and will have 2vCPUs, 2GB of RAM and 10 GB hard disk.
-- The other machines will act as workers and they will have 2vCPUs, 2GB of RAM and 10 GB hard disk.
-- We will assign our machines static IP address in the internal network: 192.168.0.1, 192.168.0.2, 192.168.0.3, ..., 192.168.0.XX.
+- Our machines will be named *master* (or *node01*), *node02*, *node03*, ..., *nodeXX*.
+- Each machine will have 2 CPUs, 2GB of RAM and 20 GB hard disk.
+- The first machine will act as a master node, being the DNS, DHCP and gateway of the cluster.
+- The other machines will act as workers nodes.
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/9bddf35b-147c-49d5-9778-f1a68295bcca" width="500">
 </p>
 
 ## Prerequisite Setup
-- VirtualBox must be installed on your system (Windows/Linux/Mac).
+- VirtualBox (Windows/Linux/Mac).
 - Download the Ubuntu 24.10 image from Ubuntu's website (https://ubuntu.com/download/server).
 
 
 ## Template VM Creation
 **Objective**: Create a template VM that can be cloned to deploy the cluster.
 
-### Creation
+### Machine Creation
 - In VirtualBox click _**Machine>New**_.
 - Configure name and operating system of the machine (you must select the Ubuntu image previously downloaded).
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/406e5466-695b-4b8a-a7ef-5107f98867e9" width="700">
+  <img src="https://github.com/user-attachments/assets/567237c9-17f9-4249-8205-f9194e751087" width="700">
 </p>
 
 - Configure username and password.
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/4578060f-7f05-44e9-b80a-3d4831a121e3" width="700">
+  <img src="https://github.com/user-attachments/assets/7d0c1aa1-8ae0-4a26-9f25-bc80fa56971d" width="700">
 </p>
 
-- Configure hardware (lets select 2048 MB of RAM memory and 2 CPU).
+- Configure hardware (let's select 2048 MB of RAM memory and 2 CPU).
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/d87a6cf4-a861-45d0-8dbb-b4b1e357c675"  width="700">
+  <img src="https://github.com/user-attachments/assets/3a058592-66fe-427f-b9f1-e1f9ae4f1252"  width="700">
 
-- Configure hard disk (select 10 GB if it is not already the default option in your machine).
+- Configure hard disk (select 20 GB).
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/6345406a-ef18-4c57-acda-7dcba1c6d5b5"  width="700">
+  <img src="https://github.com/user-attachments/assets/a5e93cd6-b9ce-4bb7-84a6-9aff836f855d"  width="700">
 </p>
 
 After clicking _Finish_, the machine will start. Lets wait ultil it is fully built so we can test it.
 
 
-### Package installation
+### Package Installation
 Run these commands to update apt package manager:
 ```
 sudo apt update
@@ -65,68 +88,79 @@ sudo shutdown -h now
 The template machine should be ready now for cloning.
 
 
-## Master/Nodes creation & Network adapters configuration
-### Machine clonation
-First, lets clone the template machine so we can work in the real nodes of our cluster.
+## Nodes Creation & Network Adapters Configuration
+### Machine Clonation
+First, let's clone the template machine so we can work in the real nodes of our cluster.
 - Right click on _template_ machine in VirtualBox and then select _Clone_.
 - Set a name for you clone.
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/19d28453-aaf8-45d6-95bb-b722caa1bb33"  width="700">
+  <img src="https://github.com/user-attachments/assets/3306c8e0-11b8-43c0-a5f8-c65eb4f07a71"  width="700">
 </p>
 
-- Repeat any number of times to create the worker nodes (for now, I will only create one worker named _node01_).
+- Repeat for both *master* and *node02* (once the worker is configured, we will clone it again).
 
 
-### Network adapters configuration
-Once it is created, lets configure the two network adapters:
-1. Adapter 1 (NAT): This connects the VM to the host’s network and allows internet access.
-2. Adapter 2 (Internal network): This is used for communication between the VMs on a private internal network, where each VM is assigned a dynamic IP address.
+### Network Adapters Configuration
+In order to configure the two network adapters:
+- Adapter 1 (NAT): This connects the VM to the host’s network and allows internet access.
+- Adapter 2 (Internal network): This is used for communication between the VMs on a private internal network, where each VM is assigned a dynamic IP address.
    
-- Right click in the virtual machine (_master_/_node01_) and then **_Settings>Network_**. Check that the first adapter is attached to NAT.
+- Right click in the virtual machine *master* and then **_Settings>Network_**. Check that the first adapter is attached to NAT.
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/d7b8041d-f912-4587-87c1-5e6b8789d9b3"  width="700">
+  <img src="https://github.com/user-attachments/assets/44323437-3db4-43a1-b284-a3af2c167c04"  width="700">
 </p>
 
 - Select _Adapter 2_, click on _Enable Network Adapter_ and attach it to _Internal Network_. Then select a name for the network that must be the same for all the nodes (e.g., _clusternet_).
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/6fff35b0-a7af-4db3-b422-3b38bacff0b6"  width="700">
+  <img src="https://github.com/user-attachments/assets/a0172a05-eb97-4a3f-878a-215a9056eae4"  width="700">
 </p>
 
-- Save the settings and repeat the configuration for the other nodes.
+- For *node02* we will only activate the second adapter with the internal network. Worker nodes won't be able to connect directly to the internet.
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/347bf75e-def2-4b5a-8360-d36052b8c050"  width="700">
+</p>
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/ea8eaa2d-18b9-437e-bd0c-b216f1464ce8"  width="700">
+</p>
 
 
 
-##  Setting Up Port Forwarding for SSH
+## Master Node Configuration
 
-### Port forwarding rule
+### SSH Configuration
+
+#### Port Forwarding Rule
 To connect to the VMs (e.g., the master node) from your host machine, VirtualBox requires port forwarding rules to map ports from the guest VMs to your host machine. In this case, you’ll set up a rule to forward SSH traffic from port 2222 on the host to port 22 on the master node.
 
-- Open VirtualBox and right click on the _master_ machine, then **_Settings>Network>Port Forwarding>Add_**.
+- Right click on the _master_ machine, then **_Settings>Network>Port Forwarding>Add_**.
 - Fill the gaps following the table.
 
 | Namer  | Protocol | Host IP | Host Port | Guest IP | Gest Port |
 | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |
 | ssh  | TCP  | 127.0.0.1 | 2222 | | 22 |
 
-- Apply the changes and restart the VM.
+- Apply the changes and start the VM.
 
 
-### SSH service
-Lets check it is enabled now by running the command:
+#### SSH Service
+Lets check SSH is enabled now by running the command:
 ```
 sudo systemctl status ssh
 ```
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/4a3d19e1-217c-434d-9096-d6dda7913f5c"  width="700">
+</p>
 
-To ensure it starts on boot:
+To ensure that the service starts on boot:
 ```
 sudo systemctl enable ssh
 ```
 
 
-### Passwordless SSH
+#### Passwordless SSH
 To avoid entering a password each time you connect via SSH, you can configure SSH key-based authentication.
 
-First, on your host machine, generate an SSH key pair (if you don’t have one). I will be working in Windows PowerShell.
+First, on your host machine, generate an SSH key pair (if you don’t have one). Note: the commands below run on the **Windows PowerShell**.
 ```
 ssh-keygen
 ```
@@ -142,35 +176,34 @@ If your host machine shows a HUGE warning telling you that you can be suffering 
 ssh-keygen -R [127.0.0.1]:2222
 ```
 
-At this point, you should have been able to connect you VM by SSH. Now that the public key has been copied into your home directory, lets add it to the `authorized_keys` file.
+At this point, you should be been able to connect you VM by SSH. Try it by running:
+```
+ssh -p 2222 admin@127.0.0.1
+```
+
+Now that the public key has been copied into your home directory, lets add it to the `authorized_keys` file. Run these commands on you VM:
 ```
 cat id_ed25519.pub >> .ssh/authorized_keys
 rm id_ed25519.pub
 ```
 
-To verify everything works fine, just open a new terminal in your host machine and lunch an SSH connection
-```
-ssh -p 2222 admin@127.0.0.1
-```
-
-If everything is set up correctly, you will be logged in without needing to enter a password.
+If everything is set up correctly, you will be able to log in without needing to enter a password again.
 
 
 
-## Network Configuration for Master Node
+### Network Configuration
 The master node will act as the control point for the cluster, managing DNS (domain name system) and DHCP (dynamic host configuration protocol) services.
 
-### Configure the network file
-You need to configure the second network adapter (Adapter 2) to assign a static IP address. This IP address will allow the master node to communicate with the other worker nodes on the internal network.
+You need to configure the second network adapter (Adapter 2) to assign a static IP address (only for this node). This IP address will allow the *master* node to communicate with the other worker nodes on the internal network.
 
-After starting and logging into the master VM, find the network interfaces available on your VM using
+After starting and logging into the *master* VM, find the network interfaces available on your VM using
 ```
 ip link show
 ```
 
 The output will be something similar to this:
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/79386b9a-951c-4d61-99af-00e8fa3a56c0"  width="700">
+  <img src="https://github.com/user-attachments/assets/b14bff71-050d-4d04-af1b-9702d85c0a95"  width="700">
 </p>
 
 where
@@ -178,7 +211,7 @@ where
 - **enp0s3** is the first adapter (NAT).
 - **enp0s8** is the second adapter (internal network).
 
-We want to configure enp0s8 to have a static IP, like 192.168.0.1. To do this, lets edit the Netplan configuration file.
+We want to configure enp0s8 to have a static IP, like 192.168.0.1 (usually the gateway takes the first available address of the network). To do this, lets edit the Netplan configuration file.
 - Open the file with:
 ```
 sudo vim /etc/netplan/50-cloud-init.yaml
@@ -201,8 +234,8 @@ sudo netplan apply
 ```
 
 
-### Configure hosts
-To make it easier to identify machines in the cluster, lets change the hostname of the master node. Open the host file with:
+### Hostnames Configuration
+To make it easier to identify machines in the cluster, lets change the hostname of the *master* node. Open the host file with:
 ```
 sudo vim /etc/hostname
 ```
@@ -221,9 +254,10 @@ and edit it until looks like this:
 ...
 ```
 
+Reboot you machine to check the new changes.
 
 
-## DHCP and DNS
+### DHCP & DNS
 The goal of this section is to set up the master node to dynamically assign IP addresses and manage DNS resolution for the worker nodes.
 
 First, install `dnsmasq`, which is a lightweight DHCP and DNS server. It will serve the internal network, assigning dynamic IPs to the nodes and resolving hostnames.
@@ -244,6 +278,7 @@ Here are the key settings:
 - **dhcp-range**: This defines the IP range that dnsmasq will assign to the worker nodes, with a lease time of 12 hours.
 - **dhcp-option=option:dns-server,192.168.0.1**: Specifies the DNS server for the DHCP clients, which is the master node itself.
 
+Add the following lines of code to the file:
 ```yaml
 port=53
 bogus-priv
@@ -270,6 +305,7 @@ sudo vim /etc/netplan/50-cloud-init.yaml
 
 ```yaml
 network:
+  version: 2
   ethernets:
     enp0s3:
       dhcp4: true
@@ -278,7 +314,6 @@ network:
       addresses: [192.168.0.1/28]
       nameservers:
         addresses: [192.168.0.1]
-  version: 2
 ```
 ```
 sudo netplan apply
@@ -304,7 +339,9 @@ After restarting, check that dnsmasq is running without issues. The service shou
 ```
 sudo systemctl status dnsmasq
 ```
-
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/41ff66a5-21e0-4626-b88c-9aa154d853ea"  width="700">
+</p>
 
 
 ## Port Forwarding and NAT in the Internal Network
@@ -378,35 +415,21 @@ sudo systemctl restart nfs-kernel-server
 
 We can now create a test file in the new folder
 ```
-touch /shared/ciao_mondo.txt
+touch /shared/hello_world.txt
 ```
 
 
 ## Worker Nodes Configuration
 
-### Configure hosts
+We can move now to the *node02* setup. 
 
-Firstly, we will configure the ssh. Activate the service in the *worker* node by running:
-```
-sudo systemctl start ssh
-```
-
-It is important to note that we won'tn be able to connect from our host machine, but from the *master* node. Now we can generate a key from the *master* and copy it in the *worker*. change *admin* for your node's user and the *192.168.0.2* for its IP.
-```
-ssh-keygen -t rsa -b 4096
-ssh-copy-id admin@192.168.0.2
-```
-
-Now we should be able to connect
-```
-ssh admin@192.168.0.2
-```
-
-Let's change the hostnames of the worker nodes. Open the host file with:
+### Hostane Configuration
+Let's change the hostname of the worker node. Open the host file with:
 ```
 sudo vim /etc/hostname
 ```
-and change its content to node02.
+and change its content to *node02*.
+
 
 ### Network configuration
 First we need to modify the network file.
@@ -444,8 +467,30 @@ Finally, set the DNS server.
 sudo ln -fs /run/systemd/resolve/resolv.conf /etc/resolv.conf
 ```
 
+We should now reboot the machine to make sure the changes work properly.
+
+
+### SSH Configuration
+
+Activate the service in the *worker* node by running:
+```
+sudo systemctl start ssh
+```
+
+It is important to note that we won't be able to connect from our host machine, but from the *master* node. Now we can generate a key from the *master* and copy it in the *worker*. change *admin* for your node's user and the *192.168.0.2* for its IP.
+```
+ssh-keygen -t rsa -b 4096
+ssh-copy-id admin@192.168.0.2
+```
+
+Now we should be able to connect.
+```
+ssh admin@192.168.0.2
+```
+
+
 ### Testing DHCP, DNS & NAT
-Now it is time to reboot our VM. In order to verify that the nodes gets an IP from the DHCP, lets run the command:
+In order to verify that the nodes gets an IP from the DHCP, lets run the command:
 ```
 ip address
 ```
@@ -467,7 +512,7 @@ If it works, that means that your master node is able to return the packages fro
 
 
 ### File System configuration (mounting point)
-Lets install the NFS client on each worker node.
+Lets install the NFS client in *node02*.
 ```
 sudo apt install nfs-common
 ```
@@ -529,6 +574,8 @@ sudo vim /etc/hostname
 ```
 
 Once the machine is rebooted, it will be able to get an IP from the DHCP, connect to the internet or other nodes using the DNS and access the shared file system.
+
+Note: you need to re-configure in each node the SSH keys in order to use the service.
 
 
 
