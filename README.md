@@ -19,9 +19,14 @@
   - [DHCP & DNS](#dhcp-&-dns)
   - [Port Forwarding and NAT in the Internal Network](#port-forwarding-and-nat-in-the-internal-network)
   - [Distributed File System](#distributed-file-system)
-  - [Goals](#goals)
-  - [Goals](#goals)
-  - [Goals](#goals)
+- [Worker Nodes Configuration](#worker-nodes-configuration)
+  - [Hostane Configuration](#hostane-configuration)
+  - [Network Configuration](nNetwork-configuration)
+  - [SSH Configuration](#ssh-configuration)
+  - [Testing DHCP, DNS & NAT](#testing-dhcp,-dns-&-nat)
+  - [File System Configuration (mounting point)](#file-system-configuration-(mounting-point))
+  - [File System Configuration (automatic mount)](#file-system-configuration-(automatic-mount))
+- [More Workers](#more-workers)
 
  
 ## Goals
@@ -431,7 +436,7 @@ sudo vim /etc/hostname
 and change its content to *node02*.
 
 
-### Network configuration
+### Network Configuration
 First we need to modify the network file.
 ```
 sudo vim /etc/netplan/50-cloud-init.yaml
@@ -511,7 +516,7 @@ If it works, that means that your master node is able to return the packages fro
 
 
 
-### File System configuration (mounting point)
+### File System Configuration (mounting point)
 Lets install the NFS client in *node02*.
 ```
 sudo apt install nfs-common
@@ -535,7 +540,7 @@ ls /shared
 NOTE: This type of mounting only works while the machine is running. After rebooting the mount point will disappear.
 
 
-### File System configuration (automatic mount)
+### File System Configuration (automatic mount)
 Install AutoFS to automatically mount the shared directory on boot, install the AutoFS package.
 ```
 sudo apt -y install autofs
@@ -565,7 +570,7 @@ Now the `shared` folder shoud remain mounted even after rebooting your node.
 
 
 
-### More workers
+### More Workers
 
 In order to create more worker nodes, we only need to clone our already configured node.
 After bootstrapping we should change the hostname to the new node name by running:
