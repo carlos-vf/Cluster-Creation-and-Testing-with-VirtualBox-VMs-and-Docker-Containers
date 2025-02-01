@@ -23,9 +23,9 @@
   - [Hostane Configuration](#hostane-configuration)
   - [Network Configuration](nNetwork-configuration)
   - [SSH Configuration](#ssh-configuration)
-  - [Testing DHCP, DNS & NAT](#testing-dhcp,-dns--nat)
-  - [File System Configuration (mounting point)](#file-system-configuration-(mounting-point))
-  - [File System Configuration (automatic mount)](#file-system-configuration-(automatic-mount))
+  - [Testing DHCP, DNS & NAT](#testing-dhcp-dns--nat)
+  - [File System Configuration (mounting point)](#file-system-configuration-mounting-point)
+  - [File System Configuration (automatic mount)](#file-system-configuration-automatic-mount)
 - [More Workers](#more-workers)
 
  
@@ -349,7 +349,7 @@ sudo systemctl status dnsmasq
 </p>
 
 
-## Port Forwarding and NAT in the Internal Network
+### Port Forwarding and NAT in the Internal Network
 In order to connect to the internet from the worker nodes using the master node as a gateway, we need to configure port forwarding in our master node.
 
 Lets create a new file and write the following line:
@@ -385,7 +385,7 @@ sudo netfilter-persistent save
 
 
 
-## Distributed File System
+### Distributed File System
 To build a cluster, you need a shared filesystem that all nodes can access.
 
 Lets begin installing the NFS kernel server package.
