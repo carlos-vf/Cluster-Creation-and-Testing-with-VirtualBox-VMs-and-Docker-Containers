@@ -27,8 +27,13 @@
   - [File System Configuration (mounting point)](#file-system-configuration-mounting-point)
   - [File System Configuration (automatic mount)](#file-system-configuration-automatic-mount)
 - [More Workers](#more-workers)
+- [Performance Tests](#performance-tests)
+  - [CPU Tests (HPCC)](#cpu-tests-hpcc)
+  - [HPCC Compilation](#hpcc-compilation)
+  - [HPCC Parameters and Execution](#hpcc-parameters-and-execution)
 
- 
+
+
 ## Goals
 The goal is to create a cluster of virtual machines connected by a virtual switch and testing their performance.
 
@@ -600,7 +605,7 @@ HPCC consists of multiple tests, including:
 - STREAM: Assesses sustainable memory bandwidth.
 
 #### MKL & OpenMPI Installation
-In order to work with HPCC, it is needed first to install Intel MKL (Math Kernel Library) and OpenMPI in our system.
+In order to work with HPCC, it is needed first to install Intel MKL (Math Kernel Library) and OpenMPI in our system. This installation must be performed in ALL NODES.
 
 To download Intel’s GPG key:
 ```
@@ -643,7 +648,7 @@ sudo apt install openmpi-bin openmpi-common libopenmpi-dev
 
 #### HPCC Compilation
 
-It is time to download and compile the HPCC benchmark. Given that all nodes need to have access to the executable, let's move to the distributed FS.
+It is time to download and compile the HPCC benchmark (we can work now in the *master* node). Given that all nodes need to have access to the executable, let's move to the distributed FS.
 ```
 cd /shared/
 ```
@@ -711,15 +716,104 @@ find . -type f \( -name "*.c" -o -name "*.h" \) -exec sed -i 's/\bMPI_Address\b/
 find . -type f \( -name "*.c" -o -name "*.h" \) -exec sed -i 's/\bMPI_Type_struct\b/MPI_Type_create_struct/g' {} +
 ```
 
-
-Once the compilation successes, we should have a new executable file `hpcc`.
+Once the compilation is completed, we should have a new executable file `hpcc`.
 <p align="center">
   <img src="https://github.com/user-attachments/assets/3fb6d105-da11-40bf-9eaf-24a934adb2c2"  width="700">
 </p>
 
 
+#### HPCC Parameters and Execution
+
+Firstly we need to configure `_hpccinf.txt` where are located all the parameters for the HPL test. You can use a tooning tool (https://www.advancedclustering.com/act_kb/tune-hpl-dat-file/) to explore some optimal combinations depending on syour particular system or test some by hand.
+```
+mv _hpccinf.txt hpccinf.txt
+vim hpccinf.txt
+```
+
+The ones I will use are the following ones:
+```yaml
+HPLinpack benchmark input file
+Innovative Computing Laboratory, University of Tennessee
+HPL.out      output file name (if any)
+6            device out (6=stdout,7=stderr,file)
+1            # of problems sizes (N)
+16384         Ns
+1            # of NBs
+128           NBs
+0            PMAP process mapping (0=Row-,1=Column-major)
+1            # of process grids (P x Q)
+1            Ps
+1            Qs
+16.0         threshold
+1            # of panel fact
+2            PFACTs (0=left, 1=Crout, 2=Right)
+1            # of recursive stopping criterium
+4            NBMINs (>= 1)
+1            # of panels in recursion
+2            NDIVs
+1            # of recursive panel fact.
+1            RFACTs (0=left, 1=Crout, 2=Right)
+1            # of broadcast
+1            BCASTs (0=1rg,1=1rM,2=2rg,3=2rM,4=Lng,5=LnM)
+1            # of lookahead depth
+1            DEPTHs (>=0)
+2            SWAP (0=bin-exch,1=long,2=mix)
+64           swapping threshold
+0            L1 in (0=transposed,1=no-transposed) form
+0            U  in (0=transposed,1=no-transposed) form
+1            Equilibration (0=no,1=yes)
+8            memory alignment in double (> 0)
+##### This line (no. 32) is ignored (it serves as a separator). ######
+0                               Number of additional problem sizes for PTRANS
+1200 10000 30000                values of N
+0                               number of additional blocking sizes for PTRANS
+40 9 8 13 13 20 16 32 64        values of NB
+```
 
 
 
+After configuring the input file, let's set up the enviroment variables to be used for MPI:
+```
+export LD_LIBRARY_PATH=/opt/intel/oneapi/mkl/latest/lib/intel64:$LD_LIBRARY_PATH
+echo 'export LD_LIBRARY_PATH=/opt/intel/oneapi/mkl/latest/lib/intel64:$LD_LIBRARY_PATH' >> ~/.bashrc
+source ~/.bashrc
+```
+
+Finally, run the MPI process in both worker nodes.
+- `mpi run` launches the `hpcc` executable across multiple processes and machines.
+- `-x LD_LIBRARY_PATH` exports the the environment variable to all MPI processes.
+- `-np 4` specifies the number of MPI processes to start.
+- `--host <ip node A>:<# processes>,<ip node B>:<# processes>` assigns processes to specific hosts.
+
+To make sure MPI works properly, run a dummy command which returns the name of the nodes:
+```
+mpirun -np 4 --host 192.168.0.3:2,192.168.0.6:2 hostname
+```
+The ouput should be something similar to this:
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/24554f2a-07ea-4342-bf56-1d1add4761a7"  width="700">
+</p>
+
+If it works fine, execute it with the `hpcc` file.
+```
+mpirun -x LD_LIBRARY_PATH -np 2 --host 192.168.0.10:1,192.168.0.4:1 hpcc
+```
+
+To check if it is working as expected, you can ran some commands like
+```
+mpstat -P ALL 1
+```
+or
+```
+htop
+```
+which show you the CPU ussage by each core or process.
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/5d9e027d-58ff-4a14-b300-9e3f3a0624fe"  width="900">
+</p>
+
+It is important to note that we are launching the tests in two cores (one pero node) instead of four. The HPCC benchmark performs intensive computing over the CPU, testing it on a 100% usage. Deploying the tests in all the cores would cause kernel starvation (all CPU resources are occupied by user-space processes, leaving no time for the operating system kernel to perform critical background tasks). This can trigger a soft lockup warning (checked by the watchdog timer), freezing the system, making other processes crash and ending in an error. 
+
+If your nodes have more than two CPUs, then just leaving one for the OS should be enough.
 
 
