@@ -572,8 +572,7 @@ Now the `shared` folder shoud remain mounted even after rebooting your node.
 
 ### More Workers
 
-In order to create more worker nodes, we only need to clone our already configured node.
-After bootstrapping we should change the hostname to the new node name by running:
+In order to create more worker nodes, we only need to clone our already configured node. For now, we will only create one more worker node: *node03*. After bootstrapping we should change the hostname to the new node name by running:
 ```
 sudo vim /etc/hostname
 ```
@@ -583,6 +582,140 @@ Once the machine is rebooted, it will be able to get an IP from the DHCP, connec
 Note: you need to re-configure in each node the SSH keys in order to use the service.
 
 
+
+
+## Performance Tests
+
+### CPU Tests (HPCC)
+
+HPCC (High-Performance Computing Challenge) is a benchmark suite designed to evaluate the performance of processors, memory subsystems, and interconnects in high-performance computing (HPC) systems (https://hpcchallenge.org/hpcc/index.html). 
+
+HPCC consists of multiple tests, including:
+
+- HPL (Linpack): Measures floating-point performance by solving dense linear systems.
+- DGEMM: Measures dense matrix-matrix multiplication performance.
+- PTRANS: Tests parallel matrix transpose performance (network bandwidth).
+- RandomAccess: Evaluates memory bandwidth by performing random updates in a large array.
+- FFT: Measures floating-point performance for Fast Fourier Transforms.
+- STREAM: Assesses sustainable memory bandwidth.
+
+#### MKL & OpenMPI Installation
+In order to work with HPCC, it is needed first to install Intel MKL (Math Kernel Library) and OpenMPI in our system.
+
+To download Intel’s GPG key:
+```
+wget -qO - https://repositories.intel.com/graphics/intel-graphics.key | sudo tee /etc/apt/trusted.gpg.d/intel-graphics.asc
+```
+
+Add Intel OneAPI Repository:
+```
+echo "deb https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+```
+
+Ensure that Intel’s packages are correctly signed by fetching another public GPG key:
+```
+sudo apt-key adv --fetch-keys "https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB"
+sudo apt update
+```
+
+Let's install now the Math Kernel Library.
+- `intel-mkl`: Installs the Intel MKL runtime (optimized mathematical functions for HPC).
+- `intel-oneapi-mkl`: Installs the full OneAPI version of MKL.
+- `intel-oneapi-mkl-devel`: Includes developer files (headers, libraries) for compiling software with MKL.
+```
+sudo apt install intel-mkl intel-oneapi-mkl intel-oneapi-mkl-devel
+```
+Note: During the installation, press *Ok* and *No* in the huge purple screens.
+
+Load Intel OneAPI environment variables:
+```
+source /opt/intel/oneapi/setvars.sh
+```
+
+And finally install OpenMPI:
+- `openmpi-bin`: Installs OpenMPI binaries (like mpirun, mpiexec).
+- `openmpi-common`: Installs OpenMPI configuration files.
+- `libopenmpi-dev`: Installs development files (for compiling MPI applications).
+```
+sudo apt install openmpi-bin openmpi-common libopenmpi-dev
+```
+
+
+#### HPCC Compilation
+
+It is time to download and compile the HPCC benchmark. Given that all nodes need to have access to the executable, let's move to the distributed FS.
+```
+cd /shared/
+```
+
+We will need to clone the HPCC repository into out machine.
+```
+git clone https://github.com/icl-utk-edu/hpcc.git
+cd hpcc/
+```
+
+In the `hpl/setup` folder you can find different makefiles for different processor architectures. Most of them are a bit outdated, so we will choose the closest one to our architecture and make the pertinent changes.
+```
+ls hpl/setup
+```
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/3b1913b4-8c04-4b0b-9161-abc32bf0cab6"  width="700">
+</p>
+
+Even though `Make.LinuxIntelIA64Itan2_eccMKL` was originally designed for Intel Itanium 2 processors, it should work for Intel Core processors adjusting a couple of parameters. First, the file must be moved one directory above:
+```
+mv /shared/hpcc/hpl/setup/Make.LinuxIntelIA64Itan2_eccMKL /shared/hpcc/hpl
+```
+
+Let's do the make now. It is important to set the architecture parameter to the same architecture name of the file:
+```
+make arch=LinuxIntelIA64Itan2_eccMKL
+```
+
+Some errors at compilation time might appear. Here are the ones I had to deal with and their possible solutions. However, each makefile executed in different systems can produce different errors. Some debugging must be probably needed to generate the final binary we are looking for.
+
+- `gcc: error: unrecognized command-line option ‘-fno-alias’`
+Open the file and edit the CCFLAGS parameter. Change `-fno-alias` for `-fno-strict-aliasing`
+```
+vim hpl/Make.LinuxIntelIA64Itan2_eccMKL
+```
+```yaml
+CCFLAGS      = $(HPL_DEFS) -O3 -fno-strict-aliasing -Wall -mcpu=itanium2
+```
+
+- `cc1: error: bad value ‘itanium2’ for ‘-mtune=’ switch`
+Open the file and edit the CCFLAGS parameter. Change `-mcpu=itanium2` for `-mtune=native` to automatically detect the architecture of your CPU.
+```
+vim hpl/Make.LinuxIntelIA64Itan2_eccMKL
+```
+```yaml
+CCFLAGS      = $(HPL_DEFS) -O3 -fno-strict-aliasing -Wall -mtune=native
+```
+
+- `/libhpl.a  -lmkl_i2p -lpthread -lguide  -lm
+  /usr/bin/ld: cannot find -lmkl_i2p: No such file or directory
+  /usr/bin/ld: cannot find -lguide: No such file or directory
+  collect2: error: ld returned 1 exit status`. Open the file and edit the LAlib parameter (which selects the Linear Algebra modules). Names might vary between MKL versions so let's set the new ones (the order is important since it will be the order in which the object files are linked).
+```
+vim hpl/Make.LinuxIntelIA64Itan2_eccMKL
+```
+```yaml
+LAlib        = -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm
+```
+
+
+- `MPI_Address` and `MPI_Type_struct` errors. If you are using the HPCC version from the webpage instead of the one in Github, then you may encounter some more errors like these (given that it is a previous version). This happens because of a difference in how MPI functions are named in different versions. To update the names:
+```
+find . -type f -name "*.c" -o -name "*.h" | xargs -I {} cp {} {}.bak
+find . -type f \( -name "*.c" -o -name "*.h" \) -exec sed -i 's/\bMPI_Address\b/MPI_Get_address/g' {} +
+find . -type f \( -name "*.c" -o -name "*.h" \) -exec sed -i 's/\bMPI_Type_struct\b/MPI_Type_create_struct/g' {} +
+```
+
+
+Once the compilation successes, we should have a new executable file `hpcc`.
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/3fb6d105-da11-40bf-9eaf-24a934adb2c2"  width="700">
+</p>
 
 
 
