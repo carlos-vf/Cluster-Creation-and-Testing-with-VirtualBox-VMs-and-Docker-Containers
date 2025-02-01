@@ -847,6 +847,7 @@ Now we can launch some tests from *master*. Each test will be running for 60 sec
 
 
 - **CPU**
+  
   In order to start two instances of *stress*, one in each node, and using both cores per node:
   ```
   mpirun -x LD_LIBRARY_PATH -np 2 --host 192.168.0.3:1,192.168.0.6:1 stress-ng --cpu 2 --timeout 60s --metrics
@@ -857,6 +858,7 @@ Now we can launch some tests from *master*. Each test will be running for 60 sec
   </p>
 
 - **Memory**
+  
   Similarly, we will allocate 1GB of memory per thread per node (2GB per node).
   ```
   mpirun -x LD_LIBRARY_PATH -np 2 --host 192.168.0.3:1,192.168.0.6:1 stress-ng --vm 2 --vm-bytes 1G --timeout 60s --metrics
@@ -866,6 +868,7 @@ Now we can launch some tests from *master*. Each test will be running for 60 sec
   </p>
 
 - **Disk (I/O)**
+  
   Let's run two processes to write and read from disk.
   ```
   mpirun -x LD_LIBRARY_PATH -np 2 --host 192.168.0.3:1,192.168.0.6:1 stress-ng --hdd 1 --timeout 60s --metrics
