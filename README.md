@@ -20,7 +20,7 @@
   - [Port Forwarding and NAT in the Internal Network](#port-forwarding-and-nat-in-the-internal-network)
   - [Distributed File System](#distributed-file-system)
 - [Worker Nodes Configuration](#worker-nodes-configuration)
-  - [Hostane Configuration](#hostane-configuration)
+  - [Hostname Configuration](#hostname-configuration)
   - [Network Configuration](nNetwork-configuration)
   - [SSH Configuration](#ssh-configuration)
   - [Testing DHCP, DNS & NAT](#testing-dhcp-dns--nat)
@@ -428,7 +428,7 @@ touch /shared/hello_world.txt
 
 We can move now to the *node02* setup. 
 
-### Hostane Configuration
+### Hostname Configuration
 Let's change the hostname of the worker node. Open the host file with:
 ```
 sudo vim /etc/hostname
