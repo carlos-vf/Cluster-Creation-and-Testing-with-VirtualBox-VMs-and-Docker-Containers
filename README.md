@@ -29,8 +29,8 @@
 - [More Workers](#more-workers)
 - [Performance Tests](#performance-tests)
   - [CPU Tests (HPCC)](#cpu-tests-hpcc)
-  - [HPCC Compilation](#hpcc-compilation)
-  - [HPCC Parameters and Execution](#hpcc-parameters-and-execution)
+    - [HPCC Compilation](#hpcc-compilation)
+    - [HPCC Parameters and Execution](#hpcc-parameters-and-execution)
 
 
 
@@ -816,4 +816,4 @@ It is important to note that we are launching the tests in two cores (one pero n
 
 If your nodes have more than two CPUs, then just leaving one for the OS should be enough.
 
-
+Finally, once all tests finsih, the summary of the results are written in an output file called `hpccoutf.txt` (there is an example in the repository).
