@@ -825,13 +825,26 @@ Finally, once all tests finsih, the summary of the results are written in an out
 
 ### General System Tests (stress-ng/sysbench)
 
+#### Stress-ng
 `stress-ng` is a tool used to stress-test a system by generating high CPU, memory, I/O, or disk loads.
 
 Let's start by installing the package in the worker nodes.
 ```
 sudo apt install stress-ng
 ```
-Now we can launch some tests from *master*. Each test will be running for 60 seconds-
+Now we can launch some tests from *master*. Each test will be running for 60 seconds. The main metrics we will focus on are:
+| Metric | Description |
+| ------------- | ------------- |
+| stressor | The test being run |
+| bogo ops | Total bogus operations performed |
+| real time (s) | Total elapsed time for the test |
+| usr time (s) | Time spent executing in user space |
+| sys time (s) | Time spent in kernel space |
+| bogo ops/s (real time) | Operations per second, based on elapsed time |
+| bogo ops/s (usr+sys time) | Operations per second, based on actual CPU work done |
+| CPU used per instance (%) | CPU utilization per stressor instance |
+| RSS Max (KB) | Maximum resident set size |
+
 
 - **CPU**
   In order to start two instances of *stress*, one in each node, and using both cores per node:
@@ -843,18 +856,26 @@ Now we can launch some tests from *master*. Each test will be running for 60 sec
     <img src="https://github.com/user-attachments/assets/e66d7030-69b7-46b2-b18e-0246b00ba382"  width="900">
   </p>
 
+- **Memory**
+  Similarly, we will allocate 1GB of memory per thread per node (2GB per node).
+  ```
+  mpirun -x LD_LIBRARY_PATH -np 2 --host 192.168.0.3:1,192.168.0.6:1 stress-ng --vm 2 --vm-bytes 1G --timeout 60s --metrics
+  ```
+  <p align="center">
+    <img src="https://github.com/user-attachments/assets/46c8a7f4-1470-4d55-8e61-f255483e3154"  width="900">
+  </p>
+
+- **Disk (I/O)**
+  Let's run two processes to write and read from disk.
+  ```
+  mpirun -x LD_LIBRARY_PATH -np 2 --host 192.168.0.3:1,192.168.0.6:1 stress-ng --hdd 1 --timeout 60s --metrics
+  ```
+  <p align="center">
+    <img src="https://github.com/user-attachments/assets/1b86fecf-91bb-40d3-9a0a-9ab3c89046db"  width="900">
+  </p>
 
 
-
-
-
-
-
-
-
-
-
-
+#### Sysbench
 
 
 
