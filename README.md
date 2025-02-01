@@ -680,41 +680,44 @@ make arch=LinuxIntelIA64Itan2_eccMKL
 Some errors at compilation time might appear. Here are the ones I had to deal with and their possible solutions. However, each makefile executed in different systems can produce different errors. Some debugging must be probably needed to generate the final binary we are looking for.
 
 - `gcc: error: unrecognized command-line option ‘-fno-alias’`
-Open the file and edit the CCFLAGS parameter. Change `-fno-alias` for `-fno-strict-aliasing`
-```
-vim hpl/Make.LinuxIntelIA64Itan2_eccMKL
-```
-```yaml
-CCFLAGS      = $(HPL_DEFS) -O3 -fno-strict-aliasing -Wall -mcpu=itanium2
-```
+  Open the file and edit the CCFLAGS parameter. Change `-fno-alias` for `-fno-strict-aliasing`
+  ```
+  vim hpl/Make.LinuxIntelIA64Itan2_eccMKL
+  ```
+  ```yaml
+  CCFLAGS      = $(HPL_DEFS) -O3 -fno-strict-aliasing -Wall -mcpu=itanium2
+  ```
 
 - `cc1: error: bad value ‘itanium2’ for ‘-mtune=’ switch`
-Open the file and edit the CCFLAGS parameter. Change `-mcpu=itanium2` for `-mtune=native` to automatically detect the architecture of your CPU.
-```
-vim hpl/Make.LinuxIntelIA64Itan2_eccMKL
-```
-```yaml
-CCFLAGS      = $(HPL_DEFS) -O3 -fno-strict-aliasing -Wall -mtune=native
-```
+  Open the file and edit the CCFLAGS parameter. Change `-mcpu=itanium2` for `-mtune=native` to automatically detect the architecture of your CPU.
+  ```
+  vim hpl/Make.LinuxIntelIA64Itan2_eccMKL
+  ```
+  ```yaml
+  CCFLAGS      = $(HPL_DEFS) -O3 -fno-strict-aliasing -Wall -mtune=native
+  ```
 
-- `/libhpl.a  -lmkl_i2p -lpthread -lguide  -lm
+- ```
+  /libhpl.a  -lmkl_i2p -lpthread -lguide  -lm
   /usr/bin/ld: cannot find -lmkl_i2p: No such file or directory
   /usr/bin/ld: cannot find -lguide: No such file or directory
-  collect2: error: ld returned 1 exit status`. Open the file and edit the LAlib parameter (which selects the Linear Algebra modules). Names might vary between MKL versions so let's set the new ones (the order is important since it will be the order in which the object files are linked).
-```
-vim hpl/Make.LinuxIntelIA64Itan2_eccMKL
-```
-```yaml
-LAlib        = -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm
-```
+  collect2: error: ld returned 1 exit status`.
+  ```
+  Open the file and edit the LAlib parameter (which selects the Linear Algebra modules). Names might vary between MKL versions so let's set the new ones (the order is important since it will be the order in which the       object files are linked).
+  ```
+  vim hpl/Make.LinuxIntelIA64Itan2_eccMKL
+  ```
+  ```yaml
+  LAlib        = -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm
+  ```
 
 
-- `MPI_Address` and `MPI_Type_struct` errors. If you are using the HPCC version from the webpage instead of the one in Github, then you may encounter some more errors like these (given that it is a previous version). This happens because of a difference in how MPI functions are named in different versions. To update the names:
-```
-find . -type f -name "*.c" -o -name "*.h" | xargs -I {} cp {} {}.bak
-find . -type f \( -name "*.c" -o -name "*.h" \) -exec sed -i 's/\bMPI_Address\b/MPI_Get_address/g' {} +
-find . -type f \( -name "*.c" -o -name "*.h" \) -exec sed -i 's/\bMPI_Type_struct\b/MPI_Type_create_struct/g' {} +
-```
+- `MPI_Address` and `MPI_Type_struct` errors. If you are using the HPCC version from the webpage instead of the one in Github, then you may encounter some more errors like these (given that it is a previous version).       This happens because of a difference in how MPI functions are named in different versions. To update the names:
+  ```
+  find . -type f -name "*.c" -o -name "*.h" | xargs -I {} cp {} {}.bak
+  find . -type f \( -name "*.c" -o -name "*.h" \) -exec sed -i 's/\bMPI_Address\b/MPI_Get_address/g' {} +
+  find . -type f \( -name "*.c" -o -name "*.h" \) -exec sed -i 's/\bMPI_Type_struct\b/MPI_Type_create_struct/g' {} +
+  ```
 
 Once the compilation is completed, we should have a new executable file `hpcc`.
 <p align="center">
@@ -809,7 +812,7 @@ htop
 ```
 which show you the CPU ussage by each core or process.
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/5d9e027d-58ff-4a14-b300-9e3f3a0624fe"  width="900">
+  <img src="https://github.com/user-attachments/assets/bbbb12b2-f854-4072-82ce-8987161f21c5"  width="900">
 </p>
 
 It is important to note that we are launching the tests in two cores (one pero node) instead of four. The HPCC benchmark performs intensive computing over the CPU, testing it on a 100% usage. Deploying the tests in all the cores would cause kernel starvation (all CPU resources are occupied by user-space processes, leaving no time for the operating system kernel to perform critical background tasks). This can trigger a soft lockup warning (checked by the watchdog timer), freezing the system, making other processes crash and ending in an error. 
@@ -817,3 +820,41 @@ It is important to note that we are launching the tests in two cores (one pero n
 If your nodes have more than two CPUs, then just leaving one for the OS should be enough.
 
 Finally, once all tests finsih, the summary of the results are written in an output file called `hpccoutf.txt` (there is an example in the repository).
+
+
+
+### General System Tests (stress-ng/sysbench)
+
+`stress-ng` is a tool used to stress-test a system by generating high CPU, memory, I/O, or disk loads.
+
+Let's start by installing the package in the worker nodes.
+```
+sudo apt install stress-ng
+```
+Now we can launch some tests from *master*. Each test will be running for 60 seconds-
+
+- **CPU**
+  In order to start two instances of *stress*, one in each node, and using both cores per node:
+  ```
+  mpirun -x LD_LIBRARY_PATH -np 2 --host 192.168.0.3:1,192.168.0.6:1 stress-ng --cpu 2 --timeout 60s --metrics
+  ```
+  After the execution we should get two tables with the results similar to the one below.
+  <p align="center">
+    <img src="https://github.com/user-attachments/assets/e66d7030-69b7-46b2-b18e-0246b00ba382"  width="900">
+  </p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
