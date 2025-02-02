@@ -31,6 +31,10 @@
   - [CPU Tests (HPCC)](#cpu-tests-hpcc)
     - [HPCC Compilation](#hpcc-compilation)
     - [HPCC Parameters and Execution](#hpcc-parameters-and-execution)
+  - [General System Tests](#general-system-tests)
+    - [Stress-ng](#stress-ng)
+    - [Sysbench](sysbench)
+  - [Disk Tests (IOZone)](#disk-tests-iozone)
 
 
 
@@ -823,7 +827,7 @@ Finally, once all tests finsih, the summary of the results are written in an out
 
 
 
-### General System Tests (stress-ng/sysbench)
+### General System Tests
 
 #### Stress-ng
 `stress-ng` is a tool used to stress-test a system by generating high CPU, memory, I/O, or disk loads.
@@ -854,7 +858,7 @@ Now we can launch some tests from *master*. Each test will be running for 60 sec
   ```
   After the execution we should get two tables with the results similar to the one below.
   <p align="center">
-    <img src="https://github.com/user-attachments/assets/e66d7030-69b7-46b2-b18e-0246b00ba382"  width="900">
+    <img src="https://github.com/user-attachments/assets/e66d7030-69b7-46b2-b18e-0246b00ba382"  width="700">
   </p>
 
 - **Memory**
@@ -864,7 +868,7 @@ Now we can launch some tests from *master*. Each test will be running for 60 sec
   mpirun -x LD_LIBRARY_PATH -np 2 --host 192.168.0.3:1,192.168.0.6:1 stress-ng --vm 2 --vm-bytes 1G --timeout 60s --metrics
   ```
   <p align="center">
-    <img src="https://github.com/user-attachments/assets/46c8a7f4-1470-4d55-8e61-f255483e3154"  width="900">
+    <img src="https://github.com/user-attachments/assets/46c8a7f4-1470-4d55-8e61-f255483e3154"  width="700">
   </p>
 
 - **Disk (I/O)**
@@ -874,11 +878,71 @@ Now we can launch some tests from *master*. Each test will be running for 60 sec
   mpirun -x LD_LIBRARY_PATH -np 2 --host 192.168.0.3:1,192.168.0.6:1 stress-ng --hdd 1 --timeout 60s --metrics
   ```
   <p align="center">
-    <img src="https://github.com/user-attachments/assets/1b86fecf-91bb-40d3-9a0a-9ab3c89046db"  width="900">
+    <img src="https://github.com/user-attachments/assets/1b86fecf-91bb-40d3-9a0a-9ab3c89046db"  width="700">
   </p>
 
 
 #### Sysbench
+An alternative to `stress-ng` is `sysbench`, a benchmarking tool for evaluating system performance. 
+
+Let's start by installing the package in the worker nodes.
+```
+sudo apt install sysbench
+```
+
+- **CPU**
+
+  We will start by launching a process thread per CPU:
+  ```
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench cpu --threads=2 run
+  ```
+  <p align="center">
+    <img src="https://github.com/user-attachments/assets/0105fdda-a143-43f7-8f63-6ce96bd957b3"  width="700">
+  </p>
+
+- **Memory**
+  
+  Similarly, we will start some threads to measure RAM speed by reading/writing data.
+  ```
+   mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench memory --threads=2 run
+  ```
+  <p align="center">
+    <img src="https://github.com/user-attachments/assets/e46d3557-eeff-46c6-adea-5299e4a3b4c5"  width="400">
+  </p>
+
+- **Disk (I/O)**
+  
+  The option `--file-test-mode=<mode>` will be used to define four different tests.
+  - `seqrd`: sequential reads.
+  - `rndrd`: random reads.
+  - `seqwr`: sequential writes.
+  - `rndwr`: random writes.
+  
+  For all tests except `seqwr`, we need to prepare some test files before. For all of them we need to delete them afterwards.
+  ```
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio --threads=2 --file-test-mode=seqrd prepare
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio --threads=2 --file-test-mode=seqrd run
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio cleanup
+  ```
+  ```
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio --threads=2 --file-test-mode=rndrd prepare
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio --threads=2 --file-test-mode=rndrd run
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio cleanup
+  ```
+  ```
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio --threads=2 --file-test-mode=seqwr run
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio cleanup
+  ```
+  ```
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio --threads=2 --file-test-mode=rndwr prepare
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio --threads=2 --file-test-mode=rndwr run
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio cleanup
+  ```
+  <p align="center">
+    <img src="https://github.com/user-attachments/assets/c8084c76-dc5e-4215-aec8-272c805aa539"  width="400">
+  </p>
 
 
+### Disk Tests (IOZone)
+  
 
