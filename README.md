@@ -944,5 +944,89 @@ sudo apt install sysbench
 
 
 ### Disk Tests (IOZone)
-  
+
+IOZone is a popular benchmarking tool for file system performance, which can test various file operations like random read/write, sequential read/write, and more.
+
+Let's start by installing the package in the nodes:
+```
+sudo apt-get install iozone3
+```
+The options we will use for this command are:
+- `-i 0`: write/rewrite.
+- `-i 1`: read/re-read.
+- `-i 2`: random-read/write.
+- `-i 3`: read-backwards.
+- `-i 4`: re-write-record.
+- `-i 5`: stride-read.
+- `-i 6`: fwrite/re-fwrite.
+- `-i 7`: fread/Re-fread.
+- `-i 8`: random mix.
+- `-i 9`: pwrite/Re-pwrite.
+- `-i 10`: pwrite/Re-pwrite.
+- `-i 11`: pwritev/Re-pwritev.
+- `-i 12`: preadv/Repreadv.
+- `-t`: Specify the number of threads to use for the test.
+- `-+m <file>`: Specify the file containing worker node details (for cluster testing).
+
+More information about what each operation means at https://www.iozone.org/docs/IOzone_msword_98.pdf.
+
+In order to set the tests for the worker nodes and forcing them to work in the shared FS, we will create a configuration file with the following characteristics: the file contains one line for each client. The fields are space delimited. Field 1 is the client name. Field 2 is the working directory, on the client, where Iozone will run. Field 3 is the path to the executable Iozone on the client.
+
+```
+vim iozone_config
+```
+```yaml
+192.168.0.3 /shared /usr/bin/iozone
+192.168.0.6 /shared /usr/bin/iozone
+```
+Since the process needs to comunicate with the workers to run the tests and the original configuration uses RSH (currently depracated), it is necessary to force the use of SSH:
+```
+export RSH=ssh
+```
+
+Now we test the disk performance. A process will be started in each worker node, each of them with two threads. It is also important to note that a writing test must be ran always before a reading test so IOZone can encounter the files to work with.
+
+```
+iozone -+m iozone_config -t2 -i0 -i1 -i2 -i3 -i4- -i5 -i6 -i7 -i8 -i9 -i10 -i11 -i12
+```
+
+After running the above command all tests will be executed, outputing a table each as the one that follows:
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/6eac6930-e66b-43f3-8971-8f0841d860a4"  width="400">
+</p>
+
+If you want to check the disk usage in real time, you can download and run a tool like `dstat`.
+```
+sudo apt install dstat
+dstat -d --disk-util --disk-tps --io 1
+```
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/2c89fa33-4831-4438-9f46-c5377697f417"  width="350">
+</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
