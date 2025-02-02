@@ -35,6 +35,7 @@
     - [Stress-ng](#stress-ng)
     - [Sysbench](sysbench)
   - [Disk Tests (IOZone)](#disk-tests-iozone)
+  - [Network Tests](#network-tests)
 
 
 
@@ -849,12 +850,21 @@ Now we can launch some tests from *master*. Each test will be running for 60 sec
 | CPU used per instance (%) | CPU utilization per stressor instance |
 | RSS Max (KB) | Maximum resident set size |
 
+To make things more readable, we will create a file indicating the hosts where the MPI commands mus be executed. This file must contain the IP address of the worker nodes together with their maximum number of slots (CPUs).
+```
+vim hosts.txt
+```
+```yaml
+192.168.0.3 slots=2
+192.168.0.6 slots=2
+```
+
 
 - **CPU**
   
   In order to start two instances of *stress*, one in each node, and using both cores per node:
   ```
-  mpirun -x LD_LIBRARY_PATH -np 2 --host 192.168.0.3:1,192.168.0.6:1 stress-ng --cpu 2 --timeout 60s --metrics
+  mpirun -x LD_LIBRARY_PATH -np 2 --hostfile hosts.txt stress-ng --cpu 2 --timeout 60s --metrics
   ```
   After the execution we should get two tables with the results similar to the one below.
   <p align="center">
@@ -865,7 +875,7 @@ Now we can launch some tests from *master*. Each test will be running for 60 sec
   
   Similarly, we will allocate 1GB of memory per thread per node (2GB per node).
   ```
-  mpirun -x LD_LIBRARY_PATH -np 2 --host 192.168.0.3:1,192.168.0.6:1 stress-ng --vm 2 --vm-bytes 1G --timeout 60s --metrics
+  mpirun -x LD_LIBRARY_PATH -np 2 --hostfile hosts.txt stress-ng --vm 2 --vm-bytes 1G --timeout 60s --metrics
   ```
   <p align="center">
     <img src="https://github.com/user-attachments/assets/46c8a7f4-1470-4d55-8e61-f255483e3154"  width="700">
@@ -875,7 +885,7 @@ Now we can launch some tests from *master*. Each test will be running for 60 sec
   
   Let's run two processes to write and read from disk.
   ```
-  mpirun -x LD_LIBRARY_PATH -np 2 --host 192.168.0.3:1,192.168.0.6:1 stress-ng --hdd 1 --timeout 60s --metrics
+  mpirun -x LD_LIBRARY_PATH -np 2 --hostfile hosts.txt stress-ng --hdd 1 --timeout 60s --metrics
   ```
   <p align="center">
     <img src="https://github.com/user-attachments/assets/1b86fecf-91bb-40d3-9a0a-9ab3c89046db"  width="700">
@@ -1015,9 +1025,36 @@ dstat -d --disk-util --disk-tps --io 1
 
 
 
+## Network Tests
 
+### Iperf
+`iPerf3` is a tool for active measurements of the maximum achievable bandwidth on IP networks. It supports tuning of various parameters related to timing, buffers and protocols (TCP, UDP, SCTP with IPv4 and IPv6). 
 
+Let's start by installing the package in the nodes.
+```
+sudo apt install iperf3
+```
 
+We will run `iperf` in one worker node as a server and in another as a client. Let's suppose *node02* and *node03* respectively. To initialize the server, run on *node02*:
+```
+iperf3 -s
+```
+which will listen on port 5201 by default (it is possible to modify the port with the `-p` option).
+
+On *node03* run the client (replacing the IP with the one of *node02*):
+```
+iperf3 -c 192.168.0.3
+```
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/87eab153-d041-4c98-8e14-2b4c9ee8fbcd"  width="450">
+</p>
+
+This test measures the performance of the network using TCP comunication by default. In order to re-do the test for UDP:
+```
+iperf3 -c 192.168.0.3 -u
+```
+
+In this cluster all worker nodes are connected directly to the master formaing a star topology. When testing the net performance between workers, packages need two jumps to reach their destination. However, it would be also interesting to take some measures of the comunication *master* <--> *worker* to make sure the results are as expected. To do it, we can just set the server or client in *master*.
 
 
 
