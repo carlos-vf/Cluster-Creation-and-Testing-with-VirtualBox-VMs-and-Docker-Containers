@@ -850,21 +850,12 @@ Now we can launch some tests from *master*. Each test will be running for 60 sec
 | CPU used per instance (%) | CPU utilization per stressor instance |
 | RSS Max (KB) | Maximum resident set size |
 
-To make things more readable, we will create a file indicating the hosts where the MPI commands mus be executed. This file must contain the IP address of the worker nodes together with their maximum number of slots (CPUs).
-```
-vim hosts.txt
-```
-```yaml
-192.168.0.3 slots=2
-192.168.0.6 slots=2
-```
-
 
 - **CPU**
   
-  In order to start two instances of *stress*, one in each node, and using both cores per node:
+  In order to start two instances of *stress*, one in each node:
   ```
-  mpirun -x LD_LIBRARY_PATH -np 2 --hostfile hosts.txt stress-ng --cpu 2 --timeout 60s --metrics
+  mpirun -x LD_LIBRARY_PATH -np 2 --host 192.168.0.3:1,192.168.0.6:1 stress-ng --cpu 2 --timeout 60s --metrics
   ```
   After the execution we should get two tables with the results similar to the one below.
   <p align="center">
@@ -873,9 +864,9 @@ vim hosts.txt
 
 - **Memory**
   
-  Similarly, we will allocate 1GB of memory per thread per node (2GB per node).
+  Similarly, we will allocate 1GB of memory per node (2GB per node).
   ```
-  mpirun -x LD_LIBRARY_PATH -np 2 --hostfile hosts.txt stress-ng --vm 2 --vm-bytes 1G --timeout 60s --metrics
+  mpirun -x LD_LIBRARY_PATH -np 2 --host 192.168.0.3:1,192.168.0.6:1 --vm 2 --vm-bytes 1G --timeout 60s --metrics
   ```
   <p align="center">
     <img src="https://github.com/user-attachments/assets/46c8a7f4-1470-4d55-8e61-f255483e3154"  width="700">
@@ -885,7 +876,7 @@ vim hosts.txt
   
   Let's run two processes to write and read from disk.
   ```
-  mpirun -x LD_LIBRARY_PATH -np 2 --hostfile hosts.txt stress-ng --hdd 1 --timeout 60s --metrics
+  mpirun -x LD_LIBRARY_PATH -np 2 --host 192.168.0.3:1,192.168.0.6:1 --hdd 1 --timeout 60s --metrics
   ```
   <p align="center">
     <img src="https://github.com/user-attachments/assets/1b86fecf-91bb-40d3-9a0a-9ab3c89046db"  width="700">
@@ -899,6 +890,17 @@ Let's start by installing the package in the worker nodes.
 ```
 sudo apt install sysbench
 ```
+
+To make things more readable, we will create a file indicating the hosts where the MPI commands mus be executed. This file must contain the IP address of the worker nodes together with their maximum number of slots (CPUs).
+```
+vim hosts.txt
+```
+```yaml
+192.168.0.3 slots=2
+192.168.0.6 slots=2
+```
+
+Moreover, we will introduce a new option to the `mpirun` command called `--bind-to core`, which ensures that each MPI process runs on a specific CPU core. This prevents the operating system from moving the process around between cores. Processor affinity can lead to an improvement in performance, specially in CPU intensive applications.
 
 - **CPU**
 
