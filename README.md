@@ -3,6 +3,7 @@
 ## Table of Contents
 - [Goals](#goals)
 - [Prerequisite Setup](#prerequisite-setup)
+- [Recomendations](#recomendations)
 - [Template VM Creation](#template-vm-creation)
   - [Machine Creation](#machine-creation)
   - [Package Installation](#package-installation)
@@ -35,7 +36,8 @@
     - [Stress-ng](#stress-ng)
     - [Sysbench](sysbench)
   - [Disk Tests (IOZone)](#disk-tests-iozone)
-  - [Network Tests](#network-tests)
+  - [Network Tests (iperf)](#network-tests-iperf)
+  - [Conclusions](#conclusions)
 
 
 
@@ -51,9 +53,28 @@ The goal is to create a cluster of virtual machines connected by a virtual switc
   <img src="https://github.com/user-attachments/assets/9bddf35b-147c-49d5-9778-f1a68295bcca" width="500">
 </p>
 
+Some tests will be carried out to measure the performance of the cluster:
+- CPU: HPC Challenge Benchmark for high-performance computation benchmarking
+- General System: stress-ng and sysbench to evaluate CPU, memory and diskperformance.
+- Disk: IOZone to test filesystem I/O.
+- Network: iperf to measure network throughput and latency between VMs.
+
 ## Prerequisite Setup
 - VirtualBox (Windows/Linux/Mac).
 - Download the Ubuntu 24.10 image from Ubuntu's website (https://ubuntu.com/download/server).
+
+## Recomendations
+When working with virtual machines (VMs), taking snapshots is a critical best practice that provides multiple benefits, especially in development, testing, and system administration environments.
+
+Snapshots provide a convenient way to restore a virtual machine to a known good state in case something goes wrong (which is highly probable), whether due to system failures, misconfigurations, or human errors. If you make a change to the VM (such as installing software, updating configurations, or running tests), and the changes cause problems, you can quickly revert to a previous snapshot. This minimizes downtime and ensures that systems can be restored with minimal disruption.
+
+When testing new software, running experiments, or configuring network settings, snapshots provide a safety net. You can take a snapshot before making any changes, ensuring that you can always roll back if something breaks or does not work as expected. 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/fc6f2ab8-b9b8-46a5-acf6-5566fb7b0a82" width="700">
+</p>
+
+Remember to take snapshots while the machine is **NOT running**. Otherwise, you will also save the RAM data at the moment of the snpashot, something that usually you don't want, and wasting a huge amount of memory in your system.
+
 
 
 ## Template VM Creation
@@ -1027,7 +1048,7 @@ dstat -d --disk-util --disk-tps --io 1
 
 
 
-## Network Tests
+## Network Tests (iperf)
 
 ### Iperf
 `iPerf3` is a tool for active measurements of the maximum achievable bandwidth on IP networks. It supports tuning of various parameters related to timing, buffers and protocols (TCP, UDP, SCTP with IPv4 and IPv6). 
@@ -1059,8 +1080,7 @@ iperf3 -c 192.168.0.3 -u
 In this cluster all worker nodes are connected directly to the master formaing a star topology. When testing the net performance between workers, packages need two jumps to reach their destination. However, it would be also interesting to take some measures of the comunication *master* <--> *worker* to make sure the results are as expected. To do it, we can just set the server or client in *master*.
 
 
-
-
+## Conclusions
 
 
 
