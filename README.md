@@ -1079,20 +1079,3 @@ iperf3 -c 192.168.0.3 -u
 
 In this cluster all worker nodes are connected directly to the master formaing a star topology. When testing the net performance between workers, packages need two jumps to reach their destination. However, it would be also interesting to take some measures of the comunication *master* <--> *worker* to make sure the results are as expected. To do it, we can just set the server or client in *master*.
 
-
-## Conclusions
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
