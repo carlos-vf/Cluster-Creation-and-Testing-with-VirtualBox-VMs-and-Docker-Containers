@@ -50,8 +50,9 @@ The goal is to create a cluster of virtual machines connected by a virtual switc
 - The other machines will act as workers nodes.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/9bddf35b-147c-49d5-9778-f1a68295bcca" width="500">
+  <img src="https://github.com/user-attachments/assets/8b32a82f-585e-4cf3-a56b-2ebe1f9d0e5f" width="500">
 </p>
+
 
 Some tests will be carried out to measure the performance of the cluster:
 - CPU: HPC Challenge Benchmark for high-performance computation benchmarking
