@@ -952,6 +952,8 @@ Let's start by installing the package in the nodes:
 sudo apt-get install iozone3
 ```
 The options we will use for this command are:
+- `-a`: Used to select full automatic mode.
+- `-g`: Set maximum file size (in Kbytes) for auto mode. 
 - `-i 0`: write/rewrite.
 - `-i 1`: read/re-read.
 - `-i 2`: random-read/write.
@@ -984,7 +986,7 @@ Since the process needs to comunicate with the workers to run the tests and the 
 export RSH=ssh
 ```
 
-Now we test the disk performance. A process will be started in each worker node, each of them with two threads. It is also important to note that a writing test must be ran always before a reading test so IOZone can encounter the files to work with.
+Now we test the disk performance. We can start a process in each worker node, each of them with two threads. It is also important to note that a writing test must be ran always before a reading test so IOZone can encounter the files to work with.
 
 ```
 iozone -+m iozone_config -t2 -i0 -i1 -i2 -i3 -i4- -i5 -i6 -i7 -i8 -i9 -i10 -i11 -i12
@@ -994,6 +996,11 @@ After running the above command all tests will be executed, outputing a table ea
 <p align="center">
   <img src="https://github.com/user-attachments/assets/6eac6930-e66b-43f3-8971-8f0841d860a4"  width="400">
 </p>
+
+Instead, it is possible to run the automatic mode (with only one thread pero node) which varies the record sizes from 4k to 16M and file sizes from 64k to 512M. 
+```
+iozone -+m iozone_config -a -i0 -i1 -i2 -i3 -i4- -i5 -i6 -i7 -i8 -i9 -i10 -i11 -i12 -g 1G
+```
 
 If you want to check the disk usage in real time, you can download and run a tool like `dstat`.
 ```
