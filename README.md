@@ -1,4 +1,4 @@
-# Cluster Creation and Testing in VirtualBox
+# Cluster Creation and Performance Testing in VirtualBox
 
 ## Table of Contents
 - [Goals](#goals)
