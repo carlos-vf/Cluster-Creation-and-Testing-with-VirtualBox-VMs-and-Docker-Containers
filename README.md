@@ -897,7 +897,7 @@ sudo apt install sysbench
   mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench cpu --threads=2 run
   ```
   <p align="center">
-    <img src="https://github.com/user-attachments/assets/0105fdda-a143-43f7-8f63-6ce96bd957b3"  width="700">
+    <img src="https://github.com/user-attachments/assets/0105fdda-a143-43f7-8f63-6ce96bd957b3"  width="400">
   </p>
 
 - **Memory**
