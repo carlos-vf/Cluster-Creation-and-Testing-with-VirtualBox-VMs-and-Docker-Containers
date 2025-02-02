@@ -1,0 +1,21 @@
+admin@master:~$ mpirun -x LD_LIBRARY_PATH -np 2 --host 192.168.0.3:1,192.168.0.6:1 stress-ng --vm 2 --vm-bytes 1G --timeout 60s --metrics
+stress-ng: info:  [3048] setting to a 1 min run per stressor
+stress-ng: info:  [3066] setting to a 1 min run per stressor
+stress-ng: info:  [3066] dispatching hogs: 2 vm
+stress-ng: info:  [3048] dispatching hogs: 2 vm
+stress-ng: metrc: [3066] stressor       bogo ops real time  usr time  sys time   bogo ops/s     bogo ops/s CPU used per       RSS Max
+stress-ng: metrc: [3066]                           (secs)    (secs)    (secs)   (real time) (usr+sys time) instance (%)          (KB)
+stress-ng: metrc: [3066] vm              6043510     60.03     49.75     10.18    100669.29      100840.36        49.92        600672
+stress-ng: info:  [3066] skipped: 0
+stress-ng: info:  [3066] passed: 2: vm (2)
+stress-ng: info:  [3066] failed: 0
+stress-ng: info:  [3066] metrics untrustworthy: 0
+stress-ng: info:  [3066] successful run completed in 1 min
+stress-ng: metrc: [3048] stressor       bogo ops real time  usr time  sys time   bogo ops/s     bogo ops/s CPU used per       RSS Max
+stress-ng: metrc: [3048]                           (secs)    (secs)    (secs)   (real time) (usr+sys time) instance (%)          (KB)
+stress-ng: metrc: [3048] vm              6040854     60.11     51.21      8.87    100491.93      100545.10        49.97        600824
+stress-ng: info:  [3048] skipped: 0
+stress-ng: info:  [3048] passed: 2: vm (2)
+stress-ng: info:  [3048] failed: 0
+stress-ng: info:  [3048] metrics untrustworthy: 0
+stress-ng: info:  [3048] successful run completed in 1 min

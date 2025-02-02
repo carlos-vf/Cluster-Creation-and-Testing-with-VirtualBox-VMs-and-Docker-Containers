@@ -1,0 +1,21 @@
+admin@master:/shared/hpcc$ mpirun -x LD_LIBRARY_PATH -np 2 --host 192.168.0.3:1,192.168.0.6:1 stress-ng --cpu 2 --timeout 60s --metrics
+stress-ng: info:  [2862] setting to a 1 min run per stressor
+stress-ng: info:  [2862] dispatching hogs: 2 cpu
+stress-ng: info:  [2887] setting to a 1 min run per stressor
+stress-ng: info:  [2887] dispatching hogs: 2 cpu
+stress-ng: metrc: [2862] stressor       bogo ops real time  usr time  sys time   bogo ops/s     bogo ops/s CPU used per       RSS Max
+stress-ng: metrc: [2862]                           (secs)    (secs)    (secs)   (real time) (usr+sys time) instance (%)          (KB)
+stress-ng: metrc: [2862] cpu              105385     60.00     59.89      0.09      1756.33        1756.98        49.98         16244
+stress-ng: info:  [2862] skipped: 0
+stress-ng: info:  [2862] passed: 2: cpu (2)
+stress-ng: info:  [2862] failed: 0
+stress-ng: info:  [2862] metrics untrustworthy: 0
+stress-ng: info:  [2862] successful run completed in 1 min
+stress-ng: metrc: [2887] stressor       bogo ops real time  usr time  sys time   bogo ops/s     bogo ops/s CPU used per       RSS Max
+stress-ng: metrc: [2887]                           (secs)    (secs)    (secs)   (real time) (usr+sys time) instance (%)          (KB)
+stress-ng: metrc: [2887] cpu              112543     60.00     59.31      0.62      1875.59        1877.92        49.94         16176
+stress-ng: info:  [2887] skipped: 0
+stress-ng: info:  [2887] passed: 2: cpu (2)
+stress-ng: info:  [2887] failed: 0
+stress-ng: info:  [2887] metrics untrustworthy: 0
+stress-ng: info:  [2887] successful run completed in 1 min

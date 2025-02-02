@@ -1,0 +1,74 @@
+admin@master:~$ mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench memory --threads=2 run
+sysbench 1.0.20 (using system LuaJIT 2.1.1700206165)
+
+Running the test with following options:
+Number of threads: 2
+Initializing random number generator from current time
+
+
+Running memory speed test with the following options:
+  block size: 1KiB
+  total size: 102400MiB
+  operation: write
+  scope: global
+
+Initializing worker threads...
+
+sysbench 1.0.20 (using system LuaJIT 2.1.1700206165)
+
+Threads started!
+
+Running the test with following options:
+Number of threads: 2
+Initializing random number generator from current time
+
+
+Running memory speed test with the following options:
+  block size: 1KiB
+  total size: 102400MiB
+  operation: write
+  scope: global
+
+Initializing worker threads...
+
+Threads started!
+
+Total operations: 75867433 (7585941.36 per second)
+
+74089.29 MiB transferred (7408.15 MiB/sec)
+
+
+General statistics:
+    total time:                          10.0000s
+    total number of events:              75867433
+
+Latency (ms):
+         min:                                    0.00
+         avg:                                    0.00
+         max:                                    0.27
+         95th percentile:                        0.00
+         sum:                                 4438.74
+
+Threads fairness:
+    events (avg/stddev):           37933716.5000/14495083.50
+    execution time (avg/stddev):   2.2194/0.83
+
+Total operations: 75661962 (7562433.69 per second)
+
+73888.63 MiB transferred (7385.19 MiB/sec)
+
+
+General statistics:
+    total time:                          10.0000s
+    total number of events:              75661962
+
+Latency (ms):
+         min:                                    0.00
+         avg:                                    0.00
+         max:                                    0.11
+         95th percentile:                        0.00
+         sum:                                 4436.42
+
+Threads fairness:
+    events (avg/stddev):           37830981.0000/14597819.00
+    execution time (avg/stddev):   2.2182/0.84
