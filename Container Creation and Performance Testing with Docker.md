@@ -53,11 +53,24 @@ sudo service docker start
 docker run hello-world
 ```
 
+## Dockerfiles
 
-## Building the Docker Compose
+
+
+## Docker Compose
+
+### Master Container
+
+### Worker Containers
+
+### Network
+
+
+
+## Running the Containers
 
 ```
-docker-compose up -d
+docker compose -f docker-compose.yml up --build -d
 ```
 
 To enter the master node:
@@ -65,17 +78,35 @@ To enter the master node:
 docker exec -it master sh
 ```
 
-Install ping
-```
-apt-get update -y
-apt-get install -y iputils-ping
-```
 
 
 docker-compose down --volumes --remove-orphans
-docker-compose up -d
+docker-compose up --build -d
+
+Prune all the system:
+```
+docker-compose down
+docker network prune -f
+docker volume prune -f
+docker system prune -af
+```
 
 
+Volume creation
+```
+sudo mkdir -p /mnt/volumes
+sudo fallocate -l 500M /mnt/volumes/shared_volume.img  # Create a 500MB file
+sudo mkfs.ext4 /mnt/volumes/shared_volume.img  # Format as ext4
+sudo mkdir -p /mnt/shared_volume
+sudo mount -o loop /mnt/volumes/shared_volume.img /mnt/shared_volume  # Mount it
+```
+
+docker ps
+docker logs master
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/80c94c17-1468-4f93-bc99-4459c112d987"  width="700">
+</p>
 
 
 
