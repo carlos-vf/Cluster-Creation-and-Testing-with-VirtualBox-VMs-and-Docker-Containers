@@ -1078,5 +1078,5 @@ This test measures the performance of the network using TCP comunication by defa
 iperf3 -c 192.168.0.3 -u
 ```
 
-In this cluster all worker nodes are connected directly to the master formaing a star topology. When testing the net performance between workers, packages need two jumps to reach their destination. However, it would be also interesting to take some measures of the comunication *master* <--> *worker* to make sure the results are as expected. To do it, we can just set the server or client in *master*.
+In this cluster all nodes are connected directly to a virtual switch. When testing the net performance between any of them, packages need only one jump to reach their destination. We can also take some measurements of the comunication *master* <--> *worker* to make sure the results are as expected. To do it, we can just set the server or client in *master*.
 
