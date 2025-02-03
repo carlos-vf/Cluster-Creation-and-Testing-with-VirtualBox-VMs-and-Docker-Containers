@@ -22,7 +22,7 @@
   - [Distributed File System](#distributed-file-system)
 - [Worker Nodes Configuration](#worker-nodes-configuration)
   - [Hostname Configuration](#hostname-configuration)
-  - [Network Configuration](nNetwork-configuration)
+  - [Network Configuration](network-configuration)
   - [SSH Configuration](#ssh-configuration)
   - [Testing DHCP, DNS & NAT](#testing-dhcp-dns--nat)
   - [File System Configuration (mounting point)](#file-system-configuration-mounting-point)
@@ -37,7 +37,6 @@
     - [Sysbench](sysbench)
   - [Disk Tests (IOZone)](#disk-tests-iozone)
   - [Network Tests (iperf)](#network-tests-iperf)
-  - [Conclusions](#conclusions)
 
 
 
