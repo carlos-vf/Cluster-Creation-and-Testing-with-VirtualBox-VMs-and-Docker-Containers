@@ -40,7 +40,7 @@ After setting up the containers with their respective dockerfiles and docker com
 
 
 ## Docker Installation
-Before starting, let's make sure that the version of the subsystem in the machine is WSL 2 (necessary to run Docker). You can run in your Windows PowerShell the following command
+Before starting, let's make sure that the version of the subsystem in the machine is WSL 2 (necessary to run Docker). You can run in your Windows PowerShell the following command:
 ```
 wsl -l -v
 ```
@@ -85,6 +85,9 @@ Finally, let's activate the service and run a test container:
 sudo service docker start
 docker run hello-world
 ```
+
+If you can correctly see the output, then Docker is working properly.
+
 
 ## Dockerfiles
 Let's start by defining the images for our containers. We create two different dockerfiles, one for the *master*  container (`Dockerfile.master`) and the other one for the *worker* containers (`Dockerfile.workers`).
@@ -221,7 +224,7 @@ Let's move to the docker compose file. This document defines the containers to b
 
 ### Master Container
 ```yaml
-  master:
+ master:
     build:
       context: .
       dockerfile: Dockerfile.master
@@ -251,10 +254,8 @@ Let's move to the docker compose file. This document defines the containers to b
   - `networks:`:
     - `- internal-network`: This sets the network(s) the container will connect to. Here, it connects to a custom network called internal-network.
   - `volumes:`
-    - `- /mnt/shared_volume:/mnt/shared`: This mounts a directory or volume from the host to the container.
-/mnt/shared_volume on the host is mapped to /mnt/shared inside the container.
-  - `command: tail -f /dev/null`: The command field overrides the default command specified in the Dockerfile.
-Makes the container run indefinitely without exiting.
+    - `- /mnt/shared_volume:/mnt/shared`: This mounts a directory or volume from the host to the container. /mnt/shared_volume on the host is mapped to /mnt/shared inside the container.
+  - `command: tail -f /dev/null`: The command field overrides the default command specified in the Dockerfile. Makes the container run indefinitely without exiting.
   - `deploy:`: Deployment-related options.
     -`resources:`
       - `limits:`
@@ -322,7 +323,7 @@ docker build -t master-image -f Dockerfile.master .
 docker build -t worker-image -f Dockerfile.workers .
 ```
 
-The output should be similar to this one:
+The output should be something similar to this:
 <p align="center">
   <img src="https://github.com/user-attachments/assets/b6bce2c2-edcf-4dc8-962b-6f266910fff9"  width="700">
 </p>
