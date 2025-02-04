@@ -1,0 +1,62 @@
+services:
+  master:
+    build: 
+      context: .
+      dockerfile: Dockerfile.master
+    container_name: master
+    privileged: true
+    networks:
+      - internal-network
+    volumes:
+      - /mnt/shared_volume:/mnt/shared
+    command: tail -f /dev/null
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G 
+        reservations:
+          cpus: '2.0'
+          memory: 2G 
+
+  worker1:
+    build:
+      context: .
+      dockerfile: Dockerfile.workers
+    container_name: worker1
+    privileged: true
+    networks:
+      - internal-network
+    volumes:
+      - /mnt/shared_volume:/mnt/shared
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '2.0'
+          memory: 2G
+
+  worker2:
+    build:
+      context: .
+      dockerfile: Dockerfile.workers
+    container_name: worker2
+    privileged: true
+    networks:
+      - internal-network
+    volumes:
+      - /mnt/shared_volume:/mnt/shared
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '2.0'
+          memory: 2G
+
+networks:
+  internal-network:
+    driver: bridge

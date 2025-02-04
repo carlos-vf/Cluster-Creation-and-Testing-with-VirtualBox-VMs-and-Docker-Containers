@@ -1,0 +1,21 @@
+# mpirun -x LD_LIBRARY_PATH -np 2 --host 172.18.0.4:1,172.18.0.3:1 stress-ng --vm 2 --vm-bytes 1G --timeout 60s --metrics
+stress-ng: info:  [88] setting to a 1 min, 0 secs run per stressor
+stress-ng: info:  [82] setting to a 1 min, 0 secs run per stressor
+stress-ng: info:  [88] dispatching hogs: 2 vm
+stress-ng: info:  [82] dispatching hogs: 2 vm
+stress-ng: metrc: [88] stressor       bogo ops real time  usr time  sys time   bogo ops/s     bogo ops/s CPU used per       RSS Max
+stress-ng: metrc: [88]                           (secs)    (secs)    (secs)   (real time) (usr+sys time) instance (%)          (KB)
+stress-ng: metrc: [88] vm              6549943     60.00     52.63      6.77    109158.58      110270.59        49.50        602508
+stress-ng: info:  [88] skipped: 0
+stress-ng: info:  [88] passed: 2: vm (2)
+stress-ng: info:  [88] failed: 0
+stress-ng: info:  [88] metrics untrustworthy: 0
+stress-ng: info:  [88] successful run completed in 1 min, 0.01 secs
+stress-ng: metrc: [82] stressor       bogo ops real time  usr time  sys time   bogo ops/s     bogo ops/s CPU used per       RSS Max
+stress-ng: metrc: [82]                           (secs)    (secs)    (secs)   (real time) (usr+sys time) instance (%)          (KB)
+stress-ng: metrc: [82] vm              6453526     60.03     51.62      7.61    107503.26      108948.20        49.34        600500
+stress-ng: info:  [82] skipped: 0
+stress-ng: info:  [82] passed: 2: vm (2)
+stress-ng: info:  [82] failed: 0
+stress-ng: info:  [82] metrics untrustworthy: 0
+stress-ng: info:  [82] successful run completed in 1 min, 0.06 secs

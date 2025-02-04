@@ -1,0 +1,46 @@
+# Use Ubuntu as the base image
+FROM ubuntu:latest
+
+# Prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Package installation
+RUN apt-get update && apt-get install -y \
+    vim \
+    wget \
+    gnupg \
+    git \
+    make \
+    hwloc \
+    iozone3 \
+    iputils-ping \
+    openmpi-bin \
+    openmpi-common \
+    libopenmpi-dev \
+    openssh-client
+
+# MKL and OpenMPI Installation
+RUN wget -qO - https://repositories.intel.com/graphics/intel-graphics.key | tee /etc/apt/trusted.gpg.d/intel-graphics.asc
+RUN echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list
+RUN apt-key adv --fetch-keys "https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB"
+RUN apt-get update && apt-get install -y intel-mkl intel-oneapi-mkl intel-oneapi-mkl-devel
+
+# Donwload and compile HPC
+RUN git clone https://github.com/icl-utk-edu/hpcc.git && \
+    cd hpcc && \
+    mv hpl/setup/Make.LinuxIntelIA64Itan2_eccMKL hpl/ && \
+    sed -i 's/-fno-alias/-fno-strict-aliasing/' hpl/Make.LinuxIntelIA64Itan2_eccMKL && \
+    sed -i 's/-mcpu=itanium2/-mtune=native/' hpl/Make.LinuxIntelIA64Itan2_eccMKL && \
+    sed -i 's|-lmkl_i2p -lpthread -lguide|-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm|' hpl/Make.LinuxIntelIA64Itan2_eccMKL && \
+    make arch=LinuxIntelIA64Itan2_eccMKL
+
+# Set environment variables
+ENV LD_LIBRARY_PATH=/opt/intel/oneapi/mkl/latest/lib/intel64:$LD_LIBRARY_PATH
+ENV OMPI_ALLOW_RUN_AS_ROOT=1
+ENV OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
+
+# Clean cache
+RUN rm -rf /var/lib/apt/lists/*
+
+# Default bash:
+CMD ["/bin/bash"]

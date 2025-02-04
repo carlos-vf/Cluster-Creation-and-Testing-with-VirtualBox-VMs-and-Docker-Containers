@@ -1,0 +1,43 @@
+# Use Ubuntu as the base image
+FROM ubuntu:latest
+
+# Prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Package installation
+RUN apt-get update && apt-get install -y \
+    net-tools \
+    vim \
+    wget \
+    gnupg \
+    curl \
+    hwloc \
+    openmpi-bin \
+    iputils-ping \
+    stress-ng \
+    sysbench \
+    iozone3 \
+    iperf3 \
+    openssh-server
+
+# MKL and OpenMPI Installation
+RUN wget -qO - https://repositories.intel.com/graphics/intel-graphics.key | tee /etc/apt/trusted.gpg.d/intel-graphics.asc
+RUN echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list
+RUN apt-key adv --fetch-keys "https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB"
+RUN apt-get update && apt-get install -y intel-mkl intel-oneapi-mkl intel-oneapi-mkl-devel
+
+# Set environment variables
+RUN echo "export LD_LIBRARY_PATH=/opt/intel/oneapi/mkl/latest/lib/intel64:\$LD_LIBRARY_PATH" >> /etc/environment
+
+# SSH Configuration
+RUN mkdir -p /var/run/sshd \
+    && echo "PermitRootLogin yes" >> /etc/ssh/sshd_config \
+    && echo "PasswordAuthentication no" >> /etc/ssh/sshd_config \
+    && echo "PubkeyAuthentication yes" >> /etc/ssh/sshd_config
+EXPOSE 22
+
+# Clean cache
+RUN rm -rf /var/lib/apt/lists/*
+
+# Initiate SSH service
+CMD ["/usr/sbin/sshd", "-D"]

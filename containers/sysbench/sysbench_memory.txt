@@ -1,0 +1,74 @@
+# mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench memory --threads=2 run
+sysbench 1.0.20 (using system LuaJIT 2.1.0-beta3)
+
+Running the test with following options:
+Number of threads: 2
+Initializing random number generator from current time
+
+
+Running memory speed test with the following options:
+  block size: 1KiB
+  total size: 102400MiB
+  operation: write
+  scope: global
+
+Initializing worker threads...
+
+sysbench 1.0.20 (using system LuaJIT 2.1.0-beta3)
+
+Running the test with following options:
+Number of threads: 2
+Initializing random number generator from current time
+
+
+Running memory speed test with the following options:
+  block size: 1KiB
+  total size: 102400MiB
+  operation: write
+  scope: global
+
+Initializing worker threads...
+
+Threads started!
+
+Threads started!
+
+Total operations: 36513757 (3651017.08 per second)
+
+35657.97 MiB transferred (3565.45 MiB/sec)
+
+
+General statistics:
+    total time:                          10.0001s
+    total number of events:              36513757
+
+Latency (ms):
+         min:                                    0.00
+         avg:                                    0.00
+         max:                                   60.13
+         95th percentile:                        0.00
+         sum:                                14521.65
+
+Threads fairness:
+    events (avg/stddev):           18256878.5000/89981.50
+    execution time (avg/stddev):   7.2608/0.01
+
+Total operations: 43710239 (4370586.41 per second)
+
+42685.78 MiB transferred (4268.15 MiB/sec)
+
+
+General statistics:
+    total time:                          10.0001s
+    total number of events:              43710239
+
+Latency (ms):
+         min:                                    0.00
+         avg:                                    0.00
+         max:                                   60.11
+         95th percentile:                        0.00
+         sum:                                13305.09
+
+Threads fairness:
+    events (avg/stddev):           21855119.5000/247895.50
+    execution time (avg/stddev):   6.6525/0.07

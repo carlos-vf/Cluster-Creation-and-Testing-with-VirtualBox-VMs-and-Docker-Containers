@@ -1,0 +1,29 @@
+# mpirun -x LD_LIBRARY_PATH -np 2 --host 172.18.0.4:1,172.18.0.3:1 stress-ng --hdd 1 --timeout 60s --metrics
+stress-ng: info:  [106] setting to a 1 min, 0 secs run per stressor
+stress-ng: info:  [100] setting to a 1 min, 0 secs run per stressor
+stress-ng: info:  [106] dispatching hogs: 1 hdd
+stress-ng: info:  [100] dispatching hogs: 1 hdd
+stress-ng: metrc: [100] stressor       bogo ops real time  usr time  sys time   bogo ops/s     bogo ops/s CPU used per       RSS Max
+stress-ng: metrc: [100]                           (secs)    (secs)    (secs)   (real time) (usr+sys time) instance (%)          (KB)
+stress-ng: metrc: [100] hdd              163840     60.69      2.45      6.52      2699.47       18260.21        14.78         10772
+stress-ng: metrc: [100] miscellaneous metrics:
+stress-ng: metrc: [100] hdd                    0.00 MB/sec read rate (harmonic mean of 1 instance)
+stress-ng: metrc: [100] hdd                 1923.13 MB/sec write rate (harmonic mean of 1 instance)
+stress-ng: metrc: [100] hdd                 1923.13 MB/sec read/write combined rate (harmonic mean of 1 instance)
+stress-ng: info:  [100] skipped: 0
+stress-ng: info:  [100] passed: 1: hdd (1)
+stress-ng: info:  [100] failed: 0
+stress-ng: info:  [100] metrics untrustworthy: 0
+stress-ng: info:  [100] successful run completed in 1 min, 0.70 secs
+stress-ng: metrc: [106] stressor       bogo ops real time  usr time  sys time   bogo ops/s     bogo ops/s CPU used per       RSS Max
+stress-ng: metrc: [106]                           (secs)    (secs)    (secs)   (real time) (usr+sys time) instance (%)          (KB)
+stress-ng: metrc: [106] hdd              168722     61.33      2.37      6.77      2750.99       18450.18        14.91         10712
+stress-ng: metrc: [106] miscellaneous metrics:
+stress-ng: metrc: [106] hdd                    0.00 MB/sec read rate (harmonic mean of 1 instance)
+stress-ng: metrc: [106] hdd                 2067.42 MB/sec write rate (harmonic mean of 1 instance)
+stress-ng: metrc: [106] hdd                 2067.42 MB/sec read/write combined rate (harmonic mean of 1 instance)
+stress-ng: info:  [106] skipped: 0
+stress-ng: info:  [106] passed: 1: hdd (1)
+stress-ng: info:  [106] failed: 0
+stress-ng: info:  [106] metrics untrustworthy: 0
+stress-ng: info:  [106] successful run completed in 1 min, 1.33 secs

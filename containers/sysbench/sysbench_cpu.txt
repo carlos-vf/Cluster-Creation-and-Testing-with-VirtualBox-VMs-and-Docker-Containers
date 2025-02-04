@@ -1,0 +1,62 @@
+# mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench cpu --threads=2 run
+sysbench 1.0.20 (using system LuaJIT 2.1.0-beta3)
+
+Running the test with following options:
+Number of threads: 2
+Initializing random number generator from current time
+
+
+Prime numbers limit: 10000
+
+Initializing worker threads...
+
+sysbench 1.0.20 (using system LuaJIT 2.1.0-beta3)
+
+Running the test with following options:
+Number of threads: 2
+Initializing random number generator from current time
+
+
+Prime numbers limit: 10000
+
+Initializing worker threads...
+
+Threads started!
+
+Threads started!
+
+CPU speed:
+    events per second:  1589.94
+
+General statistics:
+    total time:                          10.0001s
+    total number of events:              15901
+
+Latency (ms):
+         min:                                    0.59
+         avg:                                    1.26
+         max:                                   60.86
+         95th percentile:                        0.77
+         sum:                                19994.74
+
+Threads fairness:
+    events (avg/stddev):           7950.5000/128.50
+    execution time (avg/stddev):   9.9974/0.00
+
+CPU speed:
+    events per second:  1585.91
+
+General statistics:
+    total time:                          10.0583s
+    total number of events:              15953
+
+Latency (ms):
+         min:                                    0.59
+         avg:                                    1.26
+         max:                                   61.07
+         95th percentile:                        0.77
+         sum:                                20052.95
+
+Threads fairness:
+    events (avg/stddev):           7976.5000/49.50
+    execution time (avg/stddev):   10.0265/0.03
