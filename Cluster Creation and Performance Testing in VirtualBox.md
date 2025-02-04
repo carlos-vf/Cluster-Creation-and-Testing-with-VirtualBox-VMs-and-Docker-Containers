@@ -49,7 +49,7 @@ The goal is to create a cluster of virtual machines connected by a virtual switc
 - The other machines will act as workers nodes.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/8b32a82f-585e-4cf3-a56b-2ebe1f9d0e5f" width="650">
+  <img src="https://github.com/user-attachments/assets/3eb7a6ea-d0a5-460e-9bf5-153fa243c30e" width="650">
 </p>
 
 
