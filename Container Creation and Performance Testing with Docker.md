@@ -300,9 +300,33 @@ docker compose -f docker-compose.yml up -d
   <img src="https://github.com/user-attachments/assets/e5d9c06a-0744-4f7d-9eb9-092be6f90a46"  width="500">
 </p>
 
-By running `docker exec` command, it is possible to open a bash insidea specified container:
+By running `docker exec` command, it is possible to open an interactive bash inside a specific container:
 ```
 docker exec -it master sh
+```
+
+We will need to perform some extra steps to configured the passwordless SSH manually. First, open a bash in the worker containers and run the command `ifconfig` to get the IPs of the containers. In my case:
+- worker1: 172.18.0.4
+- worker2: 172.18.0.3
+
+Now, we need to generate a key from the master container. Open it and run:
+```
+ssh-keygen -t rsa -b 2048 -f /root/.ssh/id_rsa -N ""
+cat /root/.ssh/id_rsa.pub
+```
+
+Copy the output and open the workers. We will manually paste it in their corresponding files (substitute for you key):
+```
+echo "<public-key-content>" >> /root/.ssh/authorized_keys
+chmod 600 /root/.ssh/authorized_keys
+```
+
+It is possible to test it now. If everything worked fine, you should be able to passwordless ssh your worker containers from the master. Important: test both connections before proceeding.
+```
+ssh root@172.18.0.4
+```
+```
+ssh root@172.18.0.3
 ```
 
 
@@ -331,8 +355,184 @@ It is common to have all type of issues while building or executing the containe
   This command removes all unused data, including containers, networks, images, and volumes.
 
 
+
 ## Performance Tests
 
 ### CPU Tests (HPCC)
+
+
+### General System Tests
+
+#### Stress-ng
+
+Each test will be running for 60 seconds. The main metrics we will focus on are:
+| Metric | Description |
+| ------------- | ------------- |
+| stressor | The test being run |
+| bogo ops | Total bogus operations performed |
+| real time (s) | Total elapsed time for the test |
+| usr time (s) | Time spent executing in user space |
+| sys time (s) | Time spent in kernel space |
+| bogo ops/s (real time) | Operations per second, based on elapsed time |
+| bogo ops/s (usr+sys time) | Operations per second, based on actual CPU work done |
+| CPU used per instance (%) | CPU utilization per stressor instance |
+| RSS Max (KB) | Maximum resident set size |
+
+
+- **CPU**
+  In order to start two instances of *stress*, one in each node:
+  ```
+  mpirun -x LD_LIBRARY_PATH -np 2 --host 172.18.0.4:1,172.18.0.3:1 stress-ng --cpu 2 --timeout 60s --metrics
+  ```
+
+- **Memory**
+  
+  Similarly, we will allocate 1GB of memory per node (2GB per node).
+  ```
+  mpirun -x LD_LIBRARY_PATH -np 2 --host 172.18.0.4:1,172.18.0.3:1 stress-ng --vm 2 --vm-bytes 1G --timeout 60s --metrics
+  ```
+
+- **Disk (I/O)**
+  
+  Let's run two processes to write and read from disk.
+  ```
+  mpirun -x LD_LIBRARY_PATH -np 2 --host 172.18.0.4:1,172.18.0.3:1 stress-ng --hdd 1 --timeout 60s --metrics
+  ```
+
+
+#### Sysbench
+An alternative to `stress-ng` is `sysbench`, a benchmarking tool for evaluating system performance. 
+
+To make things more readable, we will create a file indicating the hosts where the MPI commands mus be executed. This file must contain the IP address of the worker nodes together with their maximum number of slots (CPUs).
+```
+vim hosts.txt
+```
+```yaml
+172.18.0.4 slots=2
+172.18.0.3 slots=2
+```
+
+Moreover, we will introduce a new option to the `mpirun` command called `--bind-to core`, which ensures that each MPI process runs on a specific CPU core. This prevents the operating system from moving the process around between cores. Processor affinity can lead to an improvement in performance, specially in CPU intensive applications.
+
+- **CPU**
+
+  We will start by launching a process thread per CPU:
+  ```
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench cpu --threads=2 run
+  ```
+
+- **Memory**
+  
+  Similarly, we will start some threads to measure RAM speed by reading/writing data.
+  ```
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench memory --threads=2 run
+  ```
+
+
+- **Disk (I/O)**
+  
+  The option `--file-test-mode=<mode>` will be used to define four different tests.
+  - `seqrd`: sequential reads.
+  - `rndrd`: random reads.
+  - `seqwr`: sequential writes.
+  - `rndwr`: random writes.
+  
+  For all tests except `seqwr`, we need to prepare some test files before. For all of them we need to delete them afterwards.
+  ```
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio --threads=2 --file-test-mode=seqrd prepare
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio --threads=2 --file-test-mode=seqrd run
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio cleanup
+  ```
+  ```
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio --threads=2 --file-test-mode=rndrd prepare
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio --threads=2 --file-test-mode=rndrd run
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio cleanup
+  ```
+  ```
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio --threads=2 --file-test-mode=seqwr run
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio cleanup
+  ```
+  ```
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio --threads=2 --file-test-mode=rndwr prepare
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio --threads=2 --file-test-mode=rndwr run
+  mpirun -x LD_LIBRARY_PATH --bind-to core -np 2 --map-by ppr:1:core --hostfile hosts.txt sysbench fileio cleanup
+  ```
+
+
+### Disk Tests (IOZone)
+
+IOZone is a popular benchmarking tool for file system performance, which can test various file operations like random read/write, sequential read/write, and more.
+
+The options we will use for this command are:
+- `-a`: Used to select full automatic mode.
+- `-g`: Set maximum file size (in Kbytes) for auto mode. 
+- `-i 0`: write/rewrite.
+- `-i 1`: read/re-read.
+- `-i 2`: random-read/write.
+- `-i 3`: read-backwards.
+- `-i 4`: re-write-record.
+- `-i 5`: stride-read.
+- `-i 6`: fwrite/re-fwrite.
+- `-i 7`: fread/Re-fread.
+- `-i 8`: random mix.
+- `-i 9`: pwrite/Re-pwrite.
+- `-i 10`: pwrite/Re-pwrite.
+- `-i 11`: pwritev/Re-pwritev.
+- `-i 12`: preadv/Repreadv.
+- `-t`: Specify the number of threads to use for the test.
+- `-+m <file>`: Specify the file containing worker node details (for cluster testing).
+
+More information about what each operation means at https://www.iozone.org/docs/IOzone_msword_98.pdf.
+
+In order to set the tests for the worker nodes and forcing them to work in the shared FS, we will create a configuration file with the following characteristics: the file contains one line for each client. The fields are space delimited. Field 1 is the client name. Field 2 is the working directory, on the client, where Iozone will run. Field 3 is the path to the executable Iozone on the client.
+
+```
+vim iozone_config
+```
+```yaml
+172.18.0.4 /mnt/shared /usr/bin/iozone
+172.18.0.3 /mnt/shared /usr/bin/iozone  
+```
+Since the process needs to comunicate with the workers to run the tests and the original configuration uses RSH (currently depracated), it is necessary to force the use of SSH:
+```
+export RSH=ssh
+```
+
+Now we test the disk performance. We can start a process in each worker node, each of them with two threads. It is also important to note that a writing test must be ran always before a reading test so IOZone can encounter the files to work with.
+
+```
+iozone -+m iozone_config -t2 -i0 -i1 -i2 -i3 -i4- -i5 -i6 -i7 -i8 -i9 -i10 -i11 -i12
+```
+
+Instead, it is possible to run the automatic mode (with only one thread pero node) which varies the record sizes from 4k to 16M and file sizes from 64k to 512M. 
+```
+iozone -+m iozone_config -a -i0 -i1 -i2 -i3 -i4- -i5 -i6 -i7 -i8 -i9 -i10 -i11 -i12 -g 1G
+```
+
+
+## Network Tests (iperf)
+
+### Iperf
+`iPerf3` is a tool for active measurements of the maximum achievable bandwidth on IP networks. It supports tuning of various parameters related to timing, buffers and protocols (TCP, UDP, SCTP with IPv4 and IPv6). 
+
+We will run `iperf` in one container as a server and in another as a client. Let's suppose *worker1* and *worker2* respectively. To initialize the server, run on *worker1*:
+```
+iperf3 -s
+```
+which will listen on port 5201 by default (it is possible to modify the port with the `-p` option).
+
+On *node03* run the client (replacing the IP with the one of *node02*):
+```
+iperf3 -c 172.18.0.4
+```
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/87eab153-d041-4c98-8e14-2b4c9ee8fbcd"  width="450">
+</p>
+
+This test measures the performance of the network using TCP comunication by default. In order to re-do the test for UDP:
+```
+iperf3 -c 172.18.0.4 -u
+```
+
 
 
