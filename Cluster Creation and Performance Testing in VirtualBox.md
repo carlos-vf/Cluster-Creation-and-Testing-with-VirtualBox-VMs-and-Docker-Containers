@@ -729,7 +729,7 @@ Some errors at compilation time might appear. Here are the ones I had to deal wi
   /usr/bin/ld: cannot find -lguide: No such file or directory
   collect2: error: ld returned 1 exit status`.
   ```
-  Open the file and edit the LAlib parameter (which selects the Linear Algebra modules). Names might vary between MKL versions so let's set the new ones (the order is important since it will be the order in which the       object files are linked).
+  Open the file and edit the LAlib parameter (which selects the Linear Algebra modules). Names might vary between MKL versions so let's set the new ones (the order is important since it will be the order in which the object files are linked).
   ```
   vim hpl/Make.LinuxIntelIA64Itan2_eccMKL
   ```
@@ -753,13 +753,13 @@ Once the compilation is completed, we should have a new executable file `hpcc`.
 
 #### HPCC Parameters and Execution
 
-Firstly we need to configure `_hpccinf.txt` where are located all the parameters for the HPL test. You can use a tooning tool (https://www.advancedclustering.com/act_kb/tune-hpl-dat-file/) to explore some optimal combinations depending on syour particular system or test some by hand.
+Firstly we need to configure `_hpccinf.txt` where are located all the parameters for the HPL test. You can use a tuning tool (https://www.advancedclustering.com/act_kb/tune-hpl-dat-file/) to explore some optimal combinations depending on your particular system or test some by hand.
 ```
 mv _hpccinf.txt hpccinf.txt
 vim hpccinf.txt
 ```
 
-The ones I will use are the following ones:
+After testing many combinations, the ones I will use in the end are the following ones:
 ```yaml
 HPLinpack benchmark input file
 Innovative Computing Laboratory, University of Tennessee
@@ -818,7 +818,7 @@ To make sure MPI works properly, run a dummy command which returns the name of t
 ```
 mpirun -np 4 --host 192.168.0.3:2,192.168.0.6:2 hostname
 ```
-The ouput should be something similar to this:
+The output should be something similar to this:
 <p align="center">
   <img src="https://github.com/user-attachments/assets/24554f2a-07ea-4342-bf56-1d1add4761a7"  width="700">
 </p>
@@ -836,16 +836,16 @@ or
 ```
 htop
 ```
-which show you the CPU ussage by each core or process.
+which show you the CPU usage by each core or process.
 <p align="center">
   <img src="https://github.com/user-attachments/assets/bbbb12b2-f854-4072-82ce-8987161f21c5"  width="900">
 </p>
 
-It is important to note that we are launching the tests in two cores (one pero node) instead of four. The HPCC benchmark performs intensive computing over the CPU, testing it on a 100% usage. Deploying the tests in all the cores would cause kernel starvation (all CPU resources are occupied by user-space processes, leaving no time for the operating system kernel to perform critical background tasks). This can trigger a soft lockup warning (checked by the watchdog timer), freezing the system, making other processes crash and ending in an error. 
+It is important to note that we are launching the tests in two cores (one per node) instead of four. The HPCC benchmark performs intensive computing over the CPU, testing it on a 100% usage. Deploying the tests in all the cores would cause kernel starvation (all CPU resources are occupied by user-space processes, leaving no time for the operating system kernel to perform critical background tasks). This can trigger a soft lockup warning (checked by the watchdog timer), freezing the system, making other processes crash and ending in an error. 
 
 If your nodes have more than two CPUs, then just leaving one for the OS should be enough.
 
-Finally, once all tests finsih, the summary of the results are written in an output file called `hpccoutf.txt` (there is an example in the repository).
+Finally, once all tests finish, the summary of the results are written in an output file called `hpccoutf.txt` (there is an example in the repository).
 
 
 
@@ -1014,7 +1014,7 @@ vim iozone_config
 192.168.0.3 /shared /usr/bin/iozone
 192.168.0.6 /shared /usr/bin/iozone
 ```
-Since the process needs to comunicate with the workers to run the tests and the original configuration uses RSH (currently depracated), it is necessary to force the use of SSH:
+Since the process needs to communicate with the workers to run the tests and the original configuration uses RSH (currently deprecated), it is necessary to force the use of SSH:
 ```
 export RSH=ssh
 ```
@@ -1025,12 +1025,12 @@ Now we test the disk performance. We can start a process in each worker node, ea
 iozone -+m iozone_config -t2 -i0 -i1 -i2 -i3 -i4- -i5 -i6 -i7 -i8 -i9 -i10 -i11 -i12
 ```
 
-After running the above command all tests will be executed, outputing a table each as the one that follows:
+After running the above command all tests will be executed, outputting a table each as the one that follows:
 <p align="center">
   <img src="https://github.com/user-attachments/assets/6eac6930-e66b-43f3-8971-8f0841d860a4"  width="400">
 </p>
 
-Instead, it is possible to run the automatic mode (with only one thread pero node) which varies the record sizes from 4k to 16M and file sizes from 64k to 512M. 
+Instead, it is possible to run the automatic mode (with only one thread per node) which varies the record sizes from 4k to 16M and file sizes from 64k to 512M. 
 ```
 iozone -+m iozone_config -a -i0 -i1 -i2 -i3 -i4- -i5 -i6 -i7 -i8 -i9 -i10 -i11 -i12 -g 1G
 ```
@@ -1050,7 +1050,6 @@ dstat -d --disk-util --disk-tps --io 1
 
 ## Network Tests (iperf)
 
-### Iperf
 `iPerf3` is a tool for active measurements of the maximum achievable bandwidth on IP networks. It supports tuning of various parameters related to timing, buffers and protocols (TCP, UDP, SCTP with IPv4 and IPv6). 
 
 Let's start by installing the package in the nodes.
@@ -1077,5 +1076,5 @@ This test measures the performance of the network using TCP comunication by defa
 iperf3 -c 192.168.0.3 -u
 ```
 
-In this cluster all nodes are connected directly to a virtual switch. When testing the net performance between any of them, packages need only one jump to reach their destination. We can also take some measurements of the comunication *master* <--> *worker* to make sure the results are as expected. To do it, we can just set the server or client in *master*.
+In this cluster all nodes are connected directly to a virtual switch. When testing the net performance between any of them, packages need only one jump to reach their destination. We can also take some measurements of the communication *master* <--> *worker* to make sure the results are as expected. To do it, we can just set the server or client in *master*.
 
