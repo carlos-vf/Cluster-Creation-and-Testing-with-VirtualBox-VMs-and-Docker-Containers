@@ -645,9 +645,6 @@ On *node03* run the client (replacing the IP with the one of *node02*):
 ```
 iperf3 -c 172.18.0.4
 ```
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/87eab153-d041-4c98-8e14-2b4c9ee8fbcd"  width="450">
-</p>
 
 This test measures the performance of the network using TCP comunication by default. In order to re-do the test for UDP:
 ```
