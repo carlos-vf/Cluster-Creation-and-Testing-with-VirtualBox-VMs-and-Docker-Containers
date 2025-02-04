@@ -8,7 +8,7 @@
   - [Machine Creation](#machine-creation)
   - [Package Installation](#package-installation)
 - [Nodes Creation & Network Adapters Configuration](#nodes-creation--network-adapters-configuration)
-  - [Machine Clonation](#machine-clonation)
+  - [Machine Cloning](#machine-cloning)
   - [Network Adapters Configuration](#network-adapters-configuration)
 - [Master Node Configuration](#master-node-configuration)
   - [SSH Configuration](#ssh-configuration)
@@ -92,7 +92,7 @@ Remember to take snapshots while the machine is **NOT running**. Otherwise, you 
   <img src="https://github.com/user-attachments/assets/7d0c1aa1-8ae0-4a26-9f25-bc80fa56971d" width="700">
 </p>
 
-- Configure hardware (let's select 2048 MB of RAM memory and 2 CPU).
+- Configure resources (let's select 2048 MB of RAM memory and 2 CPU).
 <p align="center">
   <img src="https://github.com/user-attachments/assets/3a058592-66fe-427f-b9f1-e1f9ae4f1252"  width="700">
 
@@ -101,7 +101,7 @@ Remember to take snapshots while the machine is **NOT running**. Otherwise, you 
   <img src="https://github.com/user-attachments/assets/a5e93cd6-b9ce-4bb7-84a6-9aff836f855d"  width="700">
 </p>
 
-After clicking _Finish_, the machine will start. Lets wait ultil it is fully built so we can test it.
+After clicking _Finish_, the machine will start. Lets wait until it is fully built so we can test it.
 
 
 ### Package Installation
@@ -111,7 +111,7 @@ sudo apt update
 sudo apt upgrade
 ```
 
-Then, install some aditional packages running
+Then, install some additional packages running
 ```
 sudo apt install net-tools gcc make openssh-server
 ```
@@ -125,7 +125,7 @@ The template machine should be ready now for cloning.
 
 
 ## Nodes Creation & Network Adapters Configuration
-### Machine Clonation
+### Machine Cloning
 First, let's clone the template machine so we can work in the real nodes of our cluster.
 - Right click on _template_ machine in VirtualBox and then select _Clone_.
 - Set a name for you clone.
@@ -171,7 +171,7 @@ To connect to the VMs (e.g., the master node) from your host machine, VirtualBox
 - Right click on the _master_ machine, then **_Settings>Network>Port Forwarding>Add_**.
 - Fill the gaps following the table.
 
-| Namer  | Protocol | Host IP | Host Port | Guest IP | Gest Port |
+| Name  | Protocol | Host IP | Host Port | Guest IP | Gest Port |
 | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |
 | ssh  | TCP  | 127.0.0.1 | 2222 | | 22 |
 
@@ -179,7 +179,7 @@ To connect to the VMs (e.g., the master node) from your host machine, VirtualBox
 
 
 #### SSH Service
-Lets check SSH is enabled now by running the command:
+Let's check SSH is enabled now by running the command:
 ```
 sudo systemctl status ssh
 ```
@@ -228,7 +228,7 @@ If everything is set up correctly, you will be able to log in without needing to
 
 
 ### Network Configuration
-The master node will act as the control point for the cluster, managing DNS (domain name system) and DHCP (dynamic host configuration protocol) services.
+The *master* node will act as the control point for the cluster, managing DNS (domain name system) and DHCP (dynamic host configuration protocol) services.
 
 You need to configure the second network adapter (Adapter 2) to assign a static IP address (only for this node). This IP address will allow the *master* node to communicate with the other worker nodes on the internal network.
 
@@ -244,10 +244,10 @@ The output will be something similar to this:
 
 where
 
-- **enp0s3** is the first adapter (NAT).
-- **enp0s8** is the second adapter (internal network).
+- `enp0s3` is the first adapter (NAT).
+- `enp0s8` is the second adapter (internal network).
 
-We want to configure enp0s8 to have a static IP, like 192.168.0.1 (usually the gateway takes the first available address of the network). To do this, lets edit the Netplan configuration file.
+We want to configure `enp0s8` to have a static IP, like `192.168.0.1` (usually the gateway takes the first available address of the network). To do this, lets edit the `netplan` configuration file.
 - Open the file with:
 ```
 sudo vim /etc/netplan/50-cloud-init.yaml
@@ -264,7 +264,7 @@ network:
      addresses: [192.168.0.1/28]
 ```
 
-Finally, apply the changes with
+- Finally, apply the changes with
 ```
 sudo netplan apply
 ```
@@ -275,7 +275,7 @@ To make it easier to identify machines in the cluster, lets change the hostname 
 ```
 sudo vim /etc/hostname
 ```
-and change its content to _master_.
+and change its content to `master`.
 
 We also need to define the static IP address and hostname for the master node in `/etc/hosts` file. Open the file with:
 ```
@@ -355,7 +355,7 @@ network:
 sudo netplan apply
 ```
 
-If we want to control how `dnsmasq` interacts with `resolvconf`, we need to uncommend a couple of lines in the `/etc/default/dnsmasq` file. Lets open the file:
+If we want to control how `dnsmasq` interacts with `resolvconf`, we need to uncomment a couple of lines in the `/etc/default/dnsmasq` file. Lets open the file:
 ```
 sudo vim /etc/default/dnsmasq
 ```
@@ -383,7 +383,7 @@ sudo systemctl status dnsmasq
 ### Port Forwarding and NAT in the Internal Network
 In order to connect to the internet from the worker nodes using the master node as a gateway, we need to configure port forwarding in our master node.
 
-Lets create a new file and write the following line:
+Let's create a new file and write the following line:
 ```
 sudo vim /etc/sysctl.d/99-ipforward.conf
 ```
@@ -391,19 +391,19 @@ sudo vim /etc/sysctl.d/99-ipforward.conf
 net.ipv4.ip_forward=1
 ```
 
-Apply changes inmmediately
+Apply changes immediately
 ```
 sudo sysctl --system
 ```
 
-Verify that IP forwarding is enabled by running the following command. If the ouput is "1", everything is fine by now.
+Verify that IP forwarding is enabled by running the following command. If the output is "1", everything is fine by now.
 ```
 cat /proc/sys/net/ipv4/ip_forward
 ```
 
 We need now to ensure that the IP tables are configured to allow NAT (Network Address Translation) between network interfaces.
 
-`iptables-persistent` is a package that automatically saves your current iptables rules and loads them when the system boots. Lets install it (press _yes_ all the times it is needed):
+`iptables-persistent` is a package that automatically saves your current iptables rules and loads them when the system boots. Let's install it (press _yes_ all the times it is needed):
 ```
 sudo apt install iptables-persistent
 ```
@@ -419,7 +419,7 @@ sudo netfilter-persistent save
 ### Distributed File System
 To build a cluster, you need a shared filesystem that all nodes can access.
 
-Lets begin installing the NFS kernel server package.
+Let's begin installing the NFS kernel server package.
 ```
 sudo apt install nfs-kernel-server
 ```
@@ -548,7 +548,7 @@ If it works, that means that your master node is able to return the packages fro
 
 
 ### File System Configuration (mounting point)
-Lets install the NFS client in *node02*.
+Let's install the NFS client in *node02*.
 ```
 sudo apt install nfs-common
 ```
