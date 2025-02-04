@@ -1,4 +1,4 @@
-# Cluster Creation with VMs (VirtualBox) / Containers (Docker) and Performance Testing
+# Cluster Creation and Testing with VMs (VirtualBox) / Containers (Docker)
 
 This repository encapsulates two similar approaches to the same problem: simulating a cluster of machines.
 
