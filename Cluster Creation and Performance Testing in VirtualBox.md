@@ -563,7 +563,7 @@ Mount the shared directory from the master node to this folder.
 sudo mount 192.168.0.1:/shared /shared
 ```
 
-To check if everything went fine, just show the content of the folder. The file `ciao_mondo.txt` should appear.
+To check if everything went fine, just show the content of the folder. The file `hello_world.txt` should appear.
 ```
 ls /shared
 ```
@@ -597,7 +597,7 @@ Finally, restart AutoFS service to apply changes.
 ```
 sudo systemctl restart autofs
 ```
-Now the `shared` folder shoud remain mounted even after rebooting your node.
+Now the `shared` folder should remain mounted even after rebooting your node.
 
 
 
